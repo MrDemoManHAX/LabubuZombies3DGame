@@ -1,0 +1,3844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+   <title>Zombie Survival 3D - Ultimate Edition</title>
+   <style>
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+           -webkit-tap-highlight-color: transparent;
+       }
+
+       body {
+           overflow: hidden;
+           font-family: 'Arial Black', sans-serif;
+           background: #000;
+           touch-action: none;
+       }
+
+       #gameCanvas {
+           display: block;
+           width: 100%;
+           height: 100vh;
+       }
+
+       #hud {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           pointer-events: none;
+       }
+
+       #stats {
+           position: absolute;
+           top: 10px;
+           left: 10px;
+           color: #fff;
+           text-shadow: 2px 2px 4px #000;
+           font-size: 11px;
+           z-index: 10;
+           opacity: 0.55;
+           transition: opacity 0.3s;
+       }
+
+       #stats:hover, #stats:active {
+           opacity: 1;
+       }
+
+       .stat-bar {
+           background: rgba(0,0,0,0.6);
+           padding: 3px 7px;
+           margin: 2px 0;
+           border-radius: 4px;
+           border: 1px solid #444;
+           min-width: 130px;
+       }
+
+       #health-bar { border-color: #c00; }
+       #armor-bar { border-color: #00f; }
+       #ammo-bar { border-color: #fc0; }
+
+       .bar-container {
+           width: 100%;
+           height: 8px;
+           background: #333;
+           border-radius: 3px;
+           margin-top: 2px;
+           overflow: hidden;
+       }
+
+       .bar-fill {
+           height: 100%;
+           border-radius: 3px;
+           transition: width 0.3s;
+       }
+
+       #health-fill {
+           background: linear-gradient(90deg, #f00, #c00);
+           box-shadow: 0 0 10px rgba(255,0,0,0.5);
+       }
+
+       #armor-fill {
+           background: linear-gradient(90deg, #00f, #00c);
+           box-shadow: 0 0 10px rgba(0,0,255,0.5);
+       }
+
+       #ammo-fill {
+           background: linear-gradient(90deg, #ff0, #fa0);
+           box-shadow: 0 0 10px rgba(255,200,0,0.5);
+       }
+
+       #wave-info {
+           position: absolute;
+           top: 120px;
+           right: 10px;
+           text-align: right;
+           color: #fff;
+           font-size: 20px;
+           text-shadow: 3px 3px 6px #000;
+       }
+
+       #crosshair {
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+           width: 30px;
+           height: 30px;
+           pointer-events: none;
+       }
+
+       #crosshair::before, #crosshair::after {
+           content: '';
+           position: absolute;
+           background: rgba(255,0,0,0.8);
+       }
+
+       #crosshair::before {
+           width: 20px;
+           height: 2px;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+       }
+
+       #crosshair::after {
+           width: 2px;
+           height: 20px;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+       }
+
+       #joystick-area {
+           position: absolute;
+           bottom: 30px;
+           left: 20px;
+           width: 120px;
+           height: 120px;
+           pointer-events: all;
+       }
+
+       #joystick-base {
+           width: 100%;
+           height: 100%;
+           background: radial-gradient(circle, rgba(100,100,100,0.5), rgba(50,50,50,0.5));
+           border-radius: 50%;
+           border: 3px solid rgba(255,255,255,0.3);
+       }
+
+       #joystick-stick {
+           position: absolute;
+           width: 50px;
+           height: 50px;
+           background: radial-gradient(circle, rgba(200,200,200,0.8), rgba(150,150,150,0.8));
+           border-radius: 50%;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+           border: 3px solid rgba(255,255,255,0.5);
+       }
+
+       #shoot-button {
+           position: absolute;
+           bottom: 40px;
+           right: 30px;
+           width: 90px;
+           height: 90px;
+           background: radial-gradient(circle, rgba(255,0,0,0.7), rgba(200,0,0,0.7));
+           border-radius: 50%;
+           border: 4px solid rgba(255,255,255,0.5);
+           pointer-events: all;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: 12px;
+           color: #fff;
+           font-weight: bold;
+           text-shadow: 2px 2px 4px #000;
+           box-shadow: 0 4px 15px rgba(255,0,0,0.5);
+           cursor: pointer;
+           user-select: none;
+       }
+
+       #reload-button {
+           position: absolute;
+           bottom: 40px;
+           right: 140px;
+           width: 60px;
+           height: 60px;
+           background: radial-gradient(circle, rgba(255,200,0,0.7), rgba(200,150,0,0.7));
+           border-radius: 50%;
+           border: 3px solid rgba(255,255,255,0.5);
+           pointer-events: all;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: 10px;
+           color: #fff;
+           font-weight: bold;
+           cursor: pointer;
+           user-select: none;
+       }
+
+       #jump-button {
+           position: absolute;
+           bottom: 110px;
+           right: 140px;
+           width: 60px;
+           height: 60px;
+           background: radial-gradient(circle, rgba(100,220,100,0.85), rgba(40,160,40,0.85));
+           border-radius: 50%;
+           border: 3px solid rgba(180,255,180,0.7);
+           pointer-events: all;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: 10px;
+           font-weight: bold;
+           color: #fff;
+           cursor: pointer;
+           user-select: none;
+           box-shadow: 0 0 14px rgba(80,200,80,0.5);
+           z-index: 20;
+       }
+       #jump-button:active { transform: scale(0.92); }
+       #jump-button.fly-mode {
+           background: radial-gradient(circle, rgba(0,180,255,0.95), rgba(0,90,200,0.95));
+           border-color: rgba(100,220,255,0.9);
+           box-shadow: 0 0 22px rgba(0,180,255,0.8);
+       }
+       #fuel-bar { border-color: #0af; display: none; }
+       #fuel-fill {
+           background: linear-gradient(90deg, #0af, #0ff);
+           box-shadow: 0 0 10px rgba(0,180,255,0.6);
+       }
+
+       #weapon-cycle-button {
+           position: absolute;
+           bottom: 150px;
+           right: 30px;
+           width: 72px;
+           height: 52px;
+           background: rgba(0,0,0,0.8);
+           border: 2px solid #0f0;
+           border-radius: 10px;
+           pointer-events: all;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           cursor: pointer;
+           user-select: none;
+           box-shadow: 0 0 10px rgba(0,255,0,0.3);
+           transition: all 0.2s;
+       }
+
+       #weapon-cycle-button:active {
+           transform: scale(0.95);
+           box-shadow: 0 0 20px rgba(0,255,0,0.6);
+       }
+
+       #weapon-icon {
+           font-size: 20px;
+           margin-bottom: 1px;
+       }
+
+       #weapon-name {
+           color: #0f0;
+           font-size: 9px;
+           font-weight: bold;
+           text-shadow: 0 0 5px #0f0;
+       }
+
+       #weapon-slot-indicator {
+           color: #888;
+           font-size: 8px;
+           margin-top: 1px;
+       }
+
+       #weapon-hint {
+           position: absolute;
+           bottom: 207px;
+           right: 30px;
+           color: rgba(255,255,255,0.5);
+           font-size: 9px;
+           text-align: center;
+           width: 72px;
+           pointer-events: none;
+       }
+
+       #game-over {
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+           background: rgba(0,0,0,0.95);
+           padding: 30px;
+           border-radius: 20px;
+           text-align: center;
+           color: #fff;
+           display: none;
+           z-index: 100;
+           border: 3px solid #f00;
+       }
+
+       #game-over h1 {
+           font-size: 36px;
+           color: #f00;
+           margin-bottom: 15px;
+       }
+
+       #restart-button {
+           margin-top: 15px;
+           padding: 12px 30px;
+           font-size: 20px;
+           background: linear-gradient(90deg, #0a0, #0c0);
+           border: none;
+           border-radius: 10px;
+           color: #fff;
+           cursor: pointer;
+           font-weight: bold;
+           pointer-events: all;
+       }
+
+       .damage-flash {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(255,0,0,0.3);
+           pointer-events: none;
+           opacity: 0;
+           transition: opacity 0.2s;
+       }
+
+       #boss-warning {
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+           font-size: 48px;
+           color: #f00;
+           text-shadow: 0 0 20px #f00;
+           display: none;
+           animation: bossWarn 0.5s ease-in-out infinite;
+           z-index: 50;
+       }
+
+       @keyframes bossWarn {
+           0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+           50% { opacity: 0.5; transform: translate(-50%, -50%) scale(1.1); }
+       }
+
+       #drop-notification {
+           position: absolute;
+           top: 40%;
+           left: 50%;
+           transform: translateX(-50%);
+           font-size: 24px;
+           color: #0f0;
+           text-shadow: 0 0 10px #0f0;
+           display: none;
+           z-index: 40;
+       }
+
+       #teleport-notification {
+           position: absolute;
+           top: 30%;
+           left: 50%;
+           transform: translateX(-50%);
+           font-size: 20px;
+           color: #00ffff;
+           text-shadow: 0 0 15px #00ffff;
+           display: none;
+           z-index: 40;
+       }
+
+       #loading-screen {
+           position: absolute;
+           top: 0;
+           left: 0;
+           width: 100%;
+           height: 100%;
+           background: rgba(0,0,0,0.9);
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           z-index: 200;
+           color: #fff;
+           font-size: 24px;
+       }
+
+       #loading-screen .spinner {
+           width: 50px;
+           height: 50px;
+           border: 5px solid #333;
+           border-top: 5px solid #0f0;
+           border-radius: 50%;
+           animation: spin 1s linear infinite;
+           margin-bottom: 20px;
+       }
+
+       @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+       }
+
+       @keyframes pulse {
+           0%, 100% { opacity: 0.5; }
+           50% { opacity: 1; }
+       }
+
+       .low-health {
+           animation: pulse 0.5s infinite;
+       }
+
+       #pickup-hint {
+           position: absolute;
+           bottom: 200px;
+           left: 50%;
+           transform: translateX(-50%);
+           color: #ff0;
+           font-size: 12px;
+           text-shadow: 2px 2px 4px #000;
+           display: none;
+       }
+
+       @keyframes weaponSwitch {
+           0% { transform: scale(1); }
+           50% { transform: scale(1.1); border-color: #fff; }
+           100% { transform: scale(1); }
+       }
+
+       @keyframes comboAnim {
+           0% { transform: translateX(-50%) scale(1.6); opacity: 1; }
+           60% { transform: translateX(-50%) scale(1); opacity: 1; }
+           100% { transform: translateX(-50%) scale(0.95); opacity: 0.9; }
+       }
+
+       .weapon-switching {
+           animation: weaponSwitch 0.3s ease-out;
+       }
+
+       /* MINIMAP */
+       #minimap {
+           position: absolute;
+           top: 10px;
+           right: 10px;
+           width: 100px;
+           height: 100px;
+           background: rgba(0,0,0,0.6);
+           border: 2px solid rgba(0,255,0,0.5);
+           border-radius: 50%;
+           overflow: hidden;
+           pointer-events: none;
+       }
+       #minimap canvas {
+           width: 100%;
+           height: 100%;
+       }
+
+       /* COMBO DISPLAY */
+       #combo-display {
+           position: absolute;
+           top: 38%;
+           left: 50%;
+           transform: translateX(-50%);
+           font-size: 36px;
+           color: #ff6600;
+           text-shadow: 0 0 20px #ff4400, 2px 2px 6px #000;
+           display: none;
+           pointer-events: none;
+           font-weight: bold;
+           z-index: 30;
+           text-align: center;
+           white-space: nowrap;
+       }
+
+       /* STREAK BADGE */
+       #streak-display {
+           position: absolute;
+           top: 10px;
+           left: 50%;
+           transform: translateX(-50%);
+           color: #fff;
+           font-size: 14px;
+           text-align: center;
+           pointer-events: none;
+           text-shadow: 2px 2px 6px #000;
+       }
+
+       /* FPS COUNTER */
+       #fps-counter {
+           position: absolute;
+           bottom: 5px;
+           left: 5px;
+           color: rgba(255,255,255,0.4);
+           font-size: 11px;
+           pointer-events: none;
+       }
+
+       /* AUTO-AIM BUTTON */
+       #auto-aim-button {
+           position: absolute;
+           top: 10px;
+           left: 50%;
+           transform: translateX(-50%);
+           width: 80px;
+           height: 60px;
+           background: rgba(0,0,0,0.8);
+           border: 3px solid #888;
+           border-radius: 12px;
+           pointer-events: all;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           cursor: pointer;
+           user-select: none;
+           transition: all 0.2s;
+           font-size: 10px;
+           color: #888;
+           font-weight: bold;
+       }
+       #auto-aim-button.active {
+           border-color: #00ffff;
+           color: #00ffff;
+           box-shadow: 0 0 15px rgba(0,255,255,0.5);
+       }
+       #auto-aim-button:active {
+           transform: scale(0.95);
+       }
+       #auto-aim-icon { font-size: 22px; margin-bottom: 2px; }
+
+       /* SHOP BUTTON */
+       #shop-button {
+           position: absolute;
+           bottom: 213px;
+           right: 30px;
+           transform: none;
+           width: 72px;
+           height: 44px;
+           background: radial-gradient(circle, rgba(255,200,0,0.85), rgba(180,130,0,0.85));
+           border-radius: 10px;
+           border: 2px solid rgba(255,255,255,0.5);
+           pointer-events: all;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           font-size: 8px;
+           color: #fff;
+           font-weight: bold;
+           cursor: pointer;
+           user-select: none;
+           box-shadow: 0 3px 10px rgba(255,200,0,0.5);
+           z-index: 20;
+       }
+       #shop-button:active { transform: scale(0.95); }
+       #shop-button-icon { font-size: 18px; }
+
+       /* COINS DISPLAY */
+       #coins-display {
+           position: absolute;
+           bottom: 263px;
+           right: 30px;
+           transform: none;
+           background: rgba(0,0,0,0.7);
+           border: 2px solid #ffcc00;
+           border-radius: 20px;
+           padding: 3px 10px;
+           color: #ffcc00;
+           font-size: 12px;
+           font-weight: bold;
+           pointer-events: none;
+           text-shadow: 0 0 8px #ffcc00;
+           z-index: 20;
+           text-align: center;
+           width: 72px;
+       }
+
+       /* SHOP OVERLAY */
+       #shop-overlay {
+           position: absolute;
+           top: 0; left: 0; width: 100%; height: 100%;
+           background: rgba(0,0,0,0.92);
+           z-index: 150;
+           display: none;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           pointer-events: all;
+       }
+       #shop-overlay.open { display: flex; }
+       #shop-title {
+           font-size: 32px;
+           color: #ffcc00;
+           text-shadow: 0 0 20px #ffcc00;
+           margin-bottom: 6px;
+           font-weight: bold;
+       }
+       #shop-coins-info {
+           font-size: 16px;
+           color: #fff;
+           margin-bottom: 18px;
+           opacity: 0.8;
+       }
+       #shop-perks {
+           display: flex;
+           flex-direction: column;
+           gap: 10px;
+           width: 92%;
+           max-width: 420px;
+       }
+       .perk-card {
+           background: rgba(255,255,255,0.05);
+           border: 2px solid #444;
+           border-radius: 14px;
+           padding: 10px 14px;
+           display: flex;
+           align-items: center;
+           justify-content: space-between;
+           cursor: pointer;
+           pointer-events: all;
+           transition: all 0.2s;
+       }
+       .perk-card:active { transform: scale(0.97); }
+       .perk-card.affordable { border-color: #ffcc00; background: rgba(255,200,0,0.08); }
+       .perk-card.active-perk { border-color: #00ffcc; background: rgba(0,255,200,0.08); }
+       .perk-card.cant-afford { opacity: 0.45; }
+       .perk-left { display: flex; align-items: center; gap: 10px; }
+       .perk-icon { font-size: 28px; }
+       .perk-info { display: flex; flex-direction: column; }
+       .perk-name { color: #fff; font-size: 13px; font-weight: bold; }
+       .perk-desc { color: #aaa; font-size: 10px; margin-top: 2px; }
+       .perk-timer { color: #00ffcc; font-size: 10px; margin-top: 2px; display: none; }
+       .perk-cost {
+           background: rgba(255,200,0,0.2);
+           border: 2px solid #ffcc00;
+           border-radius: 10px;
+           padding: 4px 10px;
+           color: #ffcc00;
+           font-size: 13px;
+           font-weight: bold;
+           white-space: nowrap;
+       }
+       .perk-cost.active-cost {
+           background: rgba(0,255,200,0.2);
+           border-color: #00ffcc;
+           color: #00ffcc;
+       }
+       #shop-close {
+           margin-top: 18px;
+           padding: 12px 40px;
+           font-size: 18px;
+           background: linear-gradient(90deg, #c00, #900);
+           border: none;
+           border-radius: 12px;
+           color: #fff;
+           cursor: pointer;
+           font-weight: bold;
+           pointer-events: all;
+       }
+
+       /* ACTIVE PERK HUD ICONS */
+       #active-perks-hud {
+           position: absolute;
+           bottom: 340px;
+           right: 30px;
+           display: flex;
+           flex-direction: column;
+           gap: 4px;
+           pointer-events: none;
+           z-index: 20;
+           align-items: flex-end;
+       }
+       .hud-perk-badge {
+           background: rgba(0,0,0,0.75);
+           border: 2px solid #00ffcc;
+           border-radius: 8px;
+           padding: 3px 8px;
+           color: #00ffcc;
+           font-size: 11px;
+           font-weight: bold;
+           text-align: center;
+           min-width: 80px;
+       }
+
+       /* AUTO-AIM RING on crosshair */
+       #auto-aim-ring {
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           width: 80px;
+           height: 80px;
+           border: 2px solid rgba(0,255,255,0.6);
+           border-radius: 50%;
+           transform: translate(-50%, -50%);
+           pointer-events: none;
+           display: none;
+           box-shadow: 0 0 8px rgba(0,255,255,0.4);
+       }
+       #auto-aim-ring.locked {
+           border-color: rgba(255,50,50,0.9);
+           box-shadow: 0 0 12px rgba(255,50,50,0.6);
+           animation: aimPulse 0.5s ease-in-out infinite;
+       }
+       @keyframes aimPulse {
+           0%, 100% { opacity: 1; }
+           50% { opacity: 0.5; }
+       }
+   </style>
+</head>
+<body>
+   <canvas id="gameCanvas"></canvas>
+   
+   <div id="hud">
+       <div id="loading-screen">
+           <div class="spinner"></div>
+           <div>Loading Zombies...</div>
+       </div>
+
+       <div id="stats">
+           <div class="stat-bar" id="health-bar">
+               <div>❤️ HEALTH: <span id="health-value">100</span></div>
+               <div class="bar-container"><div class="bar-fill" id="health-fill" style="width: 100%;"></div></div>
+           </div>
+           <div class="stat-bar" id="armor-bar">
+               <div>🛡️ ARMOR: <span id="armor-value">0</span></div>
+               <div class="bar-container"><div class="bar-fill" id="armor-fill" style="width: 0%;"></div></div>
+           </div>
+           <div class="stat-bar" id="ammo-bar">
+               <div>🔫 AMMO: <span id="ammo-count">30/120</span></div>
+               <div class="bar-container"><div class="bar-fill" id="ammo-fill" style="width: 100%;"></div></div>
+           </div>
+           <div class="stat-bar">
+               💀 KILLS: <span id="kill-count">0</span> | 💰 <span id="score">0</span>
+           </div>
+           <div class="stat-bar" id="fuel-bar">
+               <div>⛽ FUEL: <span id="fuel-value">100</span>%</div>
+               <div class="bar-container"><div class="bar-fill" id="fuel-fill" style="width:100%;"></div></div>
+           </div>
+       </div>
+
+       <div id="wave-info">
+           <div style="font-size: 28px; color: #f00;">WAVE <span id="wave-number">1</span></div>
+           <div style="font-size: 16px;">🧟 <span id="zombie-count">0</span></div>
+       </div>
+
+       <div id="streak-display"></div>
+       <div id="combo-display"></div>
+       <div id="fps-counter">60 FPS</div>
+
+       <div id="crosshair"></div>
+
+       <div id="weapon-hint">TAP TO SWITCH</div>
+       <div id="weapon-cycle-button">
+           <span id="weapon-icon">🔫</span>
+           <span id="weapon-name">RIFLE</span>
+           <span id="weapon-slot-indicator">1/1</span>
+       </div>
+
+       <div id="joystick-area">
+           <div id="joystick-base">
+               <div id="joystick-stick"></div>
+           </div>
+       </div>
+
+       <!-- MINIMAP -->
+       <div id="minimap">
+           <canvas id="minimapCanvas" width="100" height="100"></canvas>
+       </div>
+
+       <div id="shoot-button">FIRE</div>
+       <div id="reload-button">RELOAD</div>
+
+       <div id="auto-aim-button">
+           <span id="auto-aim-icon">🎯</span>
+           <span>AUTO AIM</span>
+       </div>
+       <div id="auto-aim-ring"></div>
+
+       <div id="coins-display">💰 <span id="coins-count">0</span></div>
+       <div id="shop-button">
+           <span id="shop-button-icon">🛒</span>
+           <span>SHOP</span>
+       </div>
+
+       <div id="active-perks-hud"></div>
+
+       <!-- SHOP OVERLAY -->
+       <div id="shop-overlay">
+           <div id="shop-title">🛒 PERK SHOP</div>
+           <div id="shop-coins-info">💰 <span id="shop-coins-display">0</span> coins</div>
+           <div id="shop-perks"></div>
+           <button id="shop-close">▶ RESUME</button>
+       </div>
+
+       <div class="damage-flash" id="damage-flash"></div>
+       <div id="boss-warning">⚠️ BOSS INCOMING ⚠️</div>
+       <div id="drop-notification"></div>
+       <div id="teleport-notification">🚪 TELEPORTED! 🚪</div>
+       <div id="pickup-hint">Walk over items to pick up!</div>
+
+       <div id="game-over">
+           <h1>GAME OVER</h1>
+           <p style="font-size: 20px; margin: 8px 0;">Wave: <span id="final-wave">1</span></p>
+           <p style="font-size: 20px; margin: 8px 0;">Kills: <span id="final-kills">0</span></p>
+           <p style="font-size: 20px; margin: 8px 0;">Score: <span id="final-score">0</span></p>
+           <p style="font-size: 16px; margin: 8px 0; color: #ffcc00;">🏆 Best: <span id="final-high-score">0</span></p>
+           <button id="restart-button">RESTART</button>
+       </div>
+   </div>
+
+
+   <div id="jump-button">🦘 JUMP</div>
+
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+   <script>
+       // ==========================================
+       // GAME CONFIGURATION
+       // ==========================================
+       const CONFIG = {
+           PLAYER_SPEED: 0.100,
+           PLAYER_HEIGHT: 1.6,
+           
+           LOOK_SENSITIVITY_X: 0.008,
+           LOOK_SENSITIVITY_Y: 0.008,
+           
+           ZOMBIE_SPEED: 0.04,
+           ZOMBIE_DAMAGE: 10,
+           ZOMBIE_ATTACK_RANGE: 2,
+           ZOMBIE_ATTACK_COOLDOWN: 1000,
+           ZOMBIE_AGRO_CHANCE: 0.15,
+           ZOMBIE_AGRO_SPEED_MULT: 2,
+           ZOMBIE_AGRO_DAMAGE_MULT: 1.5,
+           
+           BOSS_HEALTH_MULT: 10,
+           BOSS_SIZE_MULT: 2.5,
+           BOSS_DAMAGE_MULT: 2,
+           SUPER_BOSS_HEALTH_MULT: 20,
+           SUPER_BOSS_SIZE_MULT: 5,
+           SUPER_BOSS_DAMAGE_MULT: 4,
+           
+           MAX_HEALTH: 1000,
+           MAX_ARMOR: 1000,
+           
+           DROP_CHANCE_AMMO: 0.4,
+           DROP_CHANCE_HEALTH: 0.25,
+           DROP_CHANCE_ARMOR: 0.2,
+
+           TELEPORT_COOLDOWN: 1000
+       };
+
+       // ==========================================
+       // WEAPONS DEFINITIONS
+       // ==========================================
+       const WEAPONS = {
+           rifle: {
+               name: 'RIFLE',
+               icon: '🔫',
+               damage: 34,
+               fireRate: 100,
+               clipSize: 30,
+               maxAmmo: 120,
+               color: 0x333333,
+               recoil: 0.05,
+               spread: 0,
+               projectile: false
+           },
+           shotgun: {
+               name: 'SHOTGUN',
+               icon: '🔫',
+               damage: 25,
+               fireRate: 600,
+               clipSize: 8,
+               maxAmmo: 40,
+               color: 0x8B4513,
+               recoil: 0.15,
+               spread: 0.1,
+               pellets: 6,
+               projectile: false
+           },
+           rocketLauncher: {
+               name: 'ROCKET',
+               icon: '🚀',
+               damage: 800,
+               fireRate: 1500,
+               clipSize: 2,
+               maxAmmo: 10,
+               color: 0x006400,
+               recoil: 0.25,
+               spread: 0,
+               projectile: true,
+               explosionRadius: 40,
+               projectileSpeed: 0.8,
+               explosionColor: 0xff4400
+           },
+           grenadeLauncher: {
+               name: 'GRENADE',
+               icon: '💣',
+               damage: 300,
+               fireRate: 1000,
+               clipSize: 4,
+               maxAmmo: 16,
+               color: 0x4a4a00,
+               recoil: 0.12,
+               spread: 0,
+               projectile: true,
+               explosionRadius: 10,
+               projectileSpeed: 0.5,
+               arc: true,
+               explosionColor: 0xffcc00
+           },
+           freezeGun: {
+               name: 'FREEZE',
+               icon: '❄️',
+               damage: 5,
+               fireRate: 50,
+               clipSize: 100,
+               maxAmmo: 300,
+               color: 0x00FFFF,
+               recoil: 0.02,
+               spread: 0.05,
+               projectile: false,
+               freezeDuration: 3000
+           }
+       };
+
+       // ==========================================
+       // GAME STATE
+       // ==========================================
+       const gameState = {
+           health: CONFIG.MAX_HEALTH,
+           armor: CONFIG.MAX_ARMOR,
+           kills: 0,
+           score: 0,
+           coins: 0,
+           wave: 1,
+           isReloading: false,
+           isGameOver: false,
+           zombiesThisWave: 5,
+           bossSpawned: false,
+           bossDefeated: false,
+           regularZombiesTotal: 5,
+           regularZombiesSpawned: 0,
+           regularZombiesKilled: 0,
+           bossKilled: false,
+           lastTeleportTime: 0,
+           gameStarted: false,
+           killStreak: 0,
+           lastKillTime: 0,
+           comboMultiplier: 1,
+           highScore: parseInt(localStorage.getItem('zombieHighScore') || '0'),
+           
+           weapons: [
+               { type: 'rifle', ammo: 30, totalAmmo: 120 }
+           ],
+           currentWeaponIndex: 0,
+           maxWeaponSlots: 5,
+           jumpVy: 0,
+           jumpRequested: false,
+           flyUnlocked: false,
+           flyFuel: 100,
+           flyHeld: false,
+       };
+
+       function getCurrentWeapon() {
+           return gameState.weapons[gameState.currentWeaponIndex];
+       }
+
+       function getCurrentWeaponDef() {
+           return WEAPONS[getCurrentWeapon().type];
+       }
+
+       // ==========================================
+       // THREE.JS SETUP
+       // ==========================================
+       const canvas = document.getElementById('gameCanvas');
+       const scene = new THREE.Scene();
+       
+       scene.background = new THREE.Color(0x87CEEB);
+       scene.fog = new THREE.Fog(0x87CEEB, 30, 100);
+       
+       const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+       camera.position.set(0, CONFIG.PLAYER_HEIGHT, 5);
+
+       const renderer = new THREE.WebGLRenderer({ 
+           canvas: canvas, 
+           antialias: false,
+           powerPreference: "high-performance",
+           stencil: false,
+           depth: true
+       });
+       renderer.setSize(window.innerWidth, window.innerHeight);
+       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+       renderer.shadowMap.enabled = true;
+       renderer.shadowMap.type = THREE.BasicShadowMap;
+       renderer.sortObjects = false;
+
+       const ambientLight = new THREE.AmbientLight(0x6699cc, 0.7);
+       scene.add(ambientLight);
+
+       const sunLight = new THREE.DirectionalLight(0xffffcc, 1.0);
+       sunLight.position.set(30, 50, 20);
+       sunLight.castShadow = true;
+       sunLight.shadow.mapSize.width = 1024;
+       sunLight.shadow.mapSize.height = 1024;
+       sunLight.shadow.camera.near = 0.5;
+       sunLight.shadow.camera.far = 100;
+       sunLight.shadow.camera.left = -50;
+       sunLight.shadow.camera.right = 50;
+       sunLight.shadow.camera.top = 50;
+       sunLight.shadow.camera.bottom = -50;
+       scene.add(sunLight);
+
+       const hemiLight = new THREE.HemisphereLight(0x87CEEB, 0x3a5f0b, 0.6);
+       scene.add(hemiLight);
+
+       // ==========================================
+       // LABUBU ZOMBIE MODEL (GLB)
+       // ==========================================
+       const labubuModelUrl = 'https://raw.githubusercontent.com/MrDemoManHAX/my-game-models/main/labubu_zombie.glb';
+       const gltfLoader = new THREE.GLTFLoader();
+       let labubuTemplate = null;
+       let labubuLoaded = false;
+       let labubuBaseHeight = 0; // Store the base height once
+
+       function loadLabubuModel() {
+           return new Promise((resolve, reject) => {
+               gltfLoader.load(
+                   labubuModelUrl,
+                   (gltf) => {
+                       labubuTemplate = gltf.scene;
+                       
+                       // Fix all materials in the template ONCE
+                       labubuTemplate.traverse((child) => {
+                           if (child.isMesh) {
+                               child.castShadow = true;
+                               child.receiveShadow = true;
+                               
+                               // Fix material issues - ensure fully opaque
+                               if (child.material) {
+                                   // Handle both single materials and material arrays
+                                   const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                   materials.forEach(mat => {
+                                       mat.transparent = false;
+                                       mat.opacity = 1;
+                                       mat.alphaTest = 0;
+                                       mat.depthWrite = true;
+                                       mat.depthTest = true;
+                                       mat.side = THREE.FrontSide;
+                                       mat.needsUpdate = true;
+                                   });
+                               }
+                           }
+                       });
+                       
+                       // Calculate base height once from template
+                       labubuTemplate.updateMatrixWorld(true);
+                       const box = new THREE.Box3().setFromObject(labubuTemplate);
+                       labubuBaseHeight = -box.min.y;
+                       
+                       labubuLoaded = true;
+                       console.log('Labubu zombie model loaded successfully');
+                       console.log('Base height calculated:', labubuBaseHeight);
+                       resolve();
+                   },
+                   (progress) => {
+                       if (progress.total > 0) {
+                           console.log('Loading progress:', (progress.loaded / progress.total * 100).toFixed(1) + '%');
+                       }
+                   },
+                   (error) => {
+                       console.error('Error loading labubu model:', error);
+                       resolve(); // Still resolve so game can use fallback
+                   }
+               );
+           });
+       }
+
+       // ==========================================
+       // DEEP CLONE FUNCTION FOR GLTF
+       // ==========================================
+       function deepCloneGLTF(source) {
+           const clone = source.clone(true);
+           
+           const sourceMaterials = [];
+           source.traverse((child) => {
+               if (child.isMesh && child.material) {
+                   sourceMaterials.push({
+                       uuid: child.uuid,
+                       material: child.material
+                   });
+               }
+           });
+           
+           clone.traverse((child) => {
+               if (child.isMesh && child.material) {
+                   // Deep clone the material
+                   if (Array.isArray(child.material)) {
+                       child.material = child.material.map(mat => {
+                           const newMat = mat.clone();
+                           newMat.transparent = false;
+                           newMat.opacity = 1;
+                           newMat.alphaTest = 0;
+                           newMat.depthWrite = true;
+                           newMat.depthTest = true;
+                           newMat.needsUpdate = true;
+                           return newMat;
+                       });
+                   } else {
+                       child.material = child.material.clone();
+                       child.material.transparent = false;
+                       child.material.opacity = 1;
+                       child.material.alphaTest = 0;
+                       child.material.depthWrite = true;
+                       child.material.depthTest = true;
+                       child.material.needsUpdate = true;
+                   }
+                   
+                   child.castShadow = true;
+                   child.receiveShadow = true;
+               }
+           });
+           
+           return clone;
+       }
+
+       // ==========================================
+       // SHARED GEOMETRIES & MATERIALS (for performance)
+       // ==========================================
+       const sharedHitParticleGeo = new THREE.SphereGeometry(0.05, 4, 4);
+       const sharedDeathParticleGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+       const sharedTeleportParticleGeo = new THREE.SphereGeometry(0.1, 4, 4);
+
+       // ==========================================
+       // GRASS GROUND
+       // ==========================================
+       const groundGeometry = new THREE.PlaneGeometry(150, 150, 10, 10);
+       const vertices = groundGeometry.attributes.position.array;
+       for (let i = 0; i < vertices.length; i += 3) {
+           vertices[i + 2] += (Math.random() - 0.5) * 0.1;
+       }
+       groundGeometry.computeVertexNormals();
+
+       const groundMaterial = new THREE.MeshStandardMaterial({ 
+           color: 0x3a8c3a,
+           roughness: 0.9,
+           metalness: 0.0
+       });
+       const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+       ground.rotation.x = -Math.PI / 2;
+       ground.receiveShadow = true;
+       scene.add(ground);
+
+       function createGrassPatches() {
+           // Use instanced mesh for grass instead of individual meshes
+           const grassColors = [0x2d6b2d, 0x3a8c3a, 0x4a9c4a, 0x5aac5a, 0x2a5a2a];
+           
+           // Reduce from 500 patches to 80 merged into fewer draw calls
+           for (let i = 0; i < 80; i++) {
+               const patchGeo = new THREE.PlaneGeometry(
+                   0.3 + Math.random() * 0.5,
+                   0.3 + Math.random() * 0.5
+               );
+               const patchMat = new THREE.MeshStandardMaterial({
+                   color: grassColors[Math.floor(Math.random() * grassColors.length)],
+                   roughness: 1,
+                   side: THREE.DoubleSide
+               });
+               const patch = new THREE.Mesh(patchGeo, patchMat);
+               
+               patch.position.set(
+                   (Math.random() - 0.5) * 140,
+                   0.01,
+                   (Math.random() - 0.5) * 140
+               );
+               patch.rotation.x = -Math.PI / 2;
+               patch.rotation.z = Math.random() * Math.PI;
+               scene.add(patch);
+           }
+
+           // Reduce grass blades from 1000 to 150
+           for (let i = 0; i < 150; i++) {
+               const bladeGeo = new THREE.PlaneGeometry(0.05, 0.3 + Math.random() * 0.3);
+               const bladeMat = new THREE.MeshStandardMaterial({
+                   color: grassColors[Math.floor(Math.random() * grassColors.length)],
+                   side: THREE.DoubleSide
+               });
+               const blade = new THREE.Mesh(bladeGeo, bladeMat);
+               
+               blade.position.set(
+                   (Math.random() - 0.5) * 140,
+                   0.15,
+                   (Math.random() - 0.5) * 140
+               );
+               blade.rotation.y = Math.random() * Math.PI;
+               blade.rotation.x = (Math.random() - 0.5) * 0.3;
+               scene.add(blade);
+           }
+       }
+       createGrassPatches();
+
+       // ==========================================
+       // TREES
+       // ==========================================
+       const trees = [];
+
+       function createTree(x, z, scale = 1) {
+           const treeGroup = new THREE.Group();
+           
+           const trunkHeight = 4 * scale;
+           const trunkRadius = 0.4 * scale;
+           const trunkGeo = new THREE.CylinderGeometry(
+               trunkRadius * 0.7, 
+               trunkRadius, 
+               trunkHeight, 
+               8
+           );
+           const trunkMat = new THREE.MeshStandardMaterial({ 
+               color: 0x4a3728,
+               roughness: 0.9
+           });
+           const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+           trunk.position.y = trunkHeight / 2;
+           trunk.castShadow = true;
+           trunk.receiveShadow = true;
+           treeGroup.add(trunk);
+
+           const foliageColors = [0x2d5a2d, 0x3a7a3a, 0x4a8a4a];
+           
+           for (let i = 0; i < 3; i++) {
+               const foliageRadius = (2.5 - i * 0.5) * scale;
+               const foliageHeight = (2 - i * 0.3) * scale;
+               const foliageGeo = new THREE.ConeGeometry(foliageRadius, foliageHeight, 8);
+               const foliageMat = new THREE.MeshStandardMaterial({ 
+                   color: foliageColors[i],
+                   roughness: 0.8
+               });
+               const foliage = new THREE.Mesh(foliageGeo, foliageMat);
+               foliage.position.y = trunkHeight + i * foliageHeight * 0.6;
+               foliage.castShadow = true;
+               foliage.receiveShadow = true;
+               treeGroup.add(foliage);
+           }
+
+           treeGroup.position.set(x, 0, z);
+           scene.add(treeGroup);
+           trees.push(treeGroup);
+           
+           return treeGroup;
+       }
+
+       const treePositions = [
+           { x: -35, z: -35, scale: 1.5 },
+           { x: 35, z: -35, scale: 1.8 },
+           { x: -35, z: 35, scale: 1.6 },
+           { x: 35, z: 35, scale: 1.7 },
+           { x: 0, z: -40, scale: 1.4 },
+           { x: 0, z: 40, scale: 1.5 },
+           { x: -40, z: 0, scale: 1.6 },
+           { x: 40, z: 0, scale: 1.5 },
+           { x: -20, z: -30, scale: 1.3 },
+           { x: 20, z: -30, scale: 1.4 },
+           { x: -20, z: 30, scale: 1.3 },
+           { x: 20, z: 30, scale: 1.4 },
+           { x: -45, z: -20, scale: 1.2 },
+           { x: 45, z: -20, scale: 1.3 },
+           { x: -45, z: 20, scale: 1.2 },
+           { x: 45, z: 20, scale: 1.3 },
+           { x: -30, z: -45, scale: 1.1 },
+           { x: 30, z: -45, scale: 1.2 },
+           { x: -30, z: 45, scale: 1.1 },
+           { x: 30, z: 45, scale: 1.2 },
+       ];
+
+       treePositions.forEach(pos => {
+           createTree(pos.x, pos.z, pos.scale);
+       });
+
+       // ==========================================
+       // BUILDINGS WITH DOORS
+       // ==========================================
+       const buildings = [];
+       const doors = [];
+
+       function createBuilding(x, z, width, height, depth, color = 0x666666) {
+           const buildingGroup = new THREE.Group();
+           
+           const geometry = new THREE.BoxGeometry(width, height, depth);
+           const material = new THREE.MeshStandardMaterial({ 
+               color: color,
+               roughness: 0.7
+           });
+           const building = new THREE.Mesh(geometry, material);
+           building.position.y = height / 2;
+           building.castShadow = true;
+           building.receiveShadow = true;
+           buildingGroup.add(building);
+
+           const roofGeo = new THREE.BoxGeometry(width + 0.5, 0.3, depth + 0.5);
+           const roofMat = new THREE.MeshStandardMaterial({ color: 0x444444 });
+           const roof = new THREE.Mesh(roofGeo, roofMat);
+           roof.position.y = height + 0.15;
+           roof.castShadow = true;
+           buildingGroup.add(roof);
+
+           buildingGroup.position.set(x, 0, z);
+           scene.add(buildingGroup);
+           
+           const buildingData = {
+               mesh: buildingGroup,
+               x: x,
+               z: z,
+               width: width,
+               height: height,
+               depth: depth
+           };
+           buildings.push(buildingData);
+
+           createDoorPair(x, z, width, height, depth, 'x');
+           createDoorPair(x, z, width, height, depth, 'z');
+           
+           return buildingGroup;
+       }
+
+       function createDoorPair(buildingX, buildingZ, width, height, depth, axis) {
+           const doorWidth = 1.2;
+           const doorHeight = 2.2;
+           const doorDepth = 0.3;
+           
+           let door1Pos, door2Pos, door1Rot, door2Rot;
+           
+           if (axis === 'x') {
+               door1Pos = { x: buildingX, y: doorHeight / 2, z: buildingZ - depth / 2 - doorDepth / 2 };
+               door2Pos = { x: buildingX, y: doorHeight / 2, z: buildingZ + depth / 2 + doorDepth / 2 };
+               door1Rot = 0;
+               door2Rot = 0;
+           } else {
+               door1Pos = { x: buildingX - width / 2 - doorDepth / 2, y: doorHeight / 2, z: buildingZ };
+               door2Pos = { x: buildingX + width / 2 + doorDepth / 2, y: doorHeight / 2, z: buildingZ };
+               door1Rot = Math.PI / 2;
+               door2Rot = Math.PI / 2;
+           }
+
+           const doorGeo = new THREE.BoxGeometry(doorWidth, doorHeight, doorDepth);
+           const doorMat = new THREE.MeshStandardMaterial({ 
+               color: 0x8B4513,
+               emissive: 0x221100,
+               emissiveIntensity: 0.2
+           });
+           
+           const door1 = new THREE.Mesh(doorGeo, doorMat.clone());
+           door1.position.set(door1Pos.x, door1Pos.y, door1Pos.z);
+           door1.rotation.y = door1Rot;
+           door1.castShadow = true;
+           scene.add(door1);
+
+           const glowGeo = new THREE.BoxGeometry(doorWidth + 0.2, doorHeight + 0.2, doorDepth + 0.1);
+           const glowMat = new THREE.MeshBasicMaterial({ 
+               color: 0x00ffff,
+               transparent: true,
+               opacity: 0.3
+           });
+           const glow1 = new THREE.Mesh(glowGeo, glowMat);
+           door1.add(glow1);
+
+           const door2 = new THREE.Mesh(doorGeo, doorMat.clone());
+           door2.position.set(door2Pos.x, door2Pos.y, door2Pos.z);
+           door2.rotation.y = door2Rot;
+           door2.castShadow = true;
+           scene.add(door2);
+
+           const glow2 = new THREE.Mesh(glowGeo, glowMat.clone());
+           door2.add(glow2);
+
+           const doorPair = {
+               door1: {
+                   mesh: door1,
+                   position: door1Pos,
+                   teleportTo: { x: door2Pos.x, z: door2Pos.z }
+               },
+               door2: {
+                   mesh: door2,
+                   position: door2Pos,
+                   teleportTo: { x: door1Pos.x, z: door1Pos.z }
+               },
+               axis: axis,
+               buildingX: buildingX,
+               buildingZ: buildingZ,
+               width: width,
+               depth: depth
+           };
+           doors.push(doorPair);
+       }
+
+       createBuilding(-15, -15, 8, 6, 8, 0x777777);
+       createBuilding(15, -15, 10, 8, 6, 0x666666);
+       createBuilding(-15, 15, 6, 5, 10, 0x888888);
+       createBuilding(15, 15, 8, 7, 8, 0x777777);
+       createBuilding(0, -25, 12, 4, 6, 0x999999);
+       createBuilding(-25, 0, 6, 6, 12, 0x666666);
+       createBuilding(25, 0, 8, 5, 8, 0x888888);
+       createBuilding(0, 25, 10, 6, 8, 0x777777);
+
+       // ==========================================
+       // DOOR TELEPORTATION SYSTEM
+       // ==========================================
+       function checkDoorTeleport(playerPos) {
+           const now = Date.now();
+           if (now - gameState.lastTeleportTime < CONFIG.TELEPORT_COOLDOWN) return;
+
+           for (const doorPair of doors) {
+               const dist1 = Math.sqrt(
+                   Math.pow(playerPos.x - doorPair.door1.position.x, 2) +
+                   Math.pow(playerPos.z - doorPair.door1.position.z, 2)
+               );
+               
+               if (dist1 < 0.6) {
+                   teleportPlayer(doorPair.door1.teleportTo, doorPair);
+                   return;
+               }
+
+               const dist2 = Math.sqrt(
+                   Math.pow(playerPos.x - doorPair.door2.position.x, 2) +
+                   Math.pow(playerPos.z - doorPair.door2.position.z, 2)
+               );
+               
+               if (dist2 < 0.6) {
+                   teleportPlayer(doorPair.door2.teleportTo, doorPair);
+                   return;
+               }
+           }
+       }
+
+       function teleportPlayer(targetPos, doorPair) {
+           let offsetX = 0, offsetZ = 0;
+           
+           if (doorPair.axis === 'x') {
+               offsetZ = targetPos.z > doorPair.buildingZ ? 2 : -2;
+           } else {
+               offsetX = targetPos.x > doorPair.buildingX ? 2 : -2;
+           }
+
+           camera.position.x = targetPos.x + offsetX;
+           camera.position.z = targetPos.z + offsetZ;
+           
+           gameState.lastTeleportTime = Date.now();
+           showTeleportNotification();
+           createTeleportEffect(camera.position.x, camera.position.z);
+       }
+
+       function showTeleportNotification() {
+           const notif = document.getElementById('teleport-notification');
+           notif.style.display = 'block';
+           setTimeout(() => notif.style.display = 'none', 1000);
+       }
+
+       function createTeleportEffect(x, z) {
+           const particleCount = 20;
+           const particles = [];
+           
+           for (let i = 0; i < particleCount; i++) {
+               const particleMat = new THREE.MeshBasicMaterial({ 
+                   color: 0x00ffff,
+                   transparent: true,
+                   opacity: 1
+               });
+               const particle = new THREE.Mesh(sharedTeleportParticleGeo, particleMat);
+               
+               particle.position.set(x, CONFIG.PLAYER_HEIGHT, z);
+               particle.userData.velocity = new THREE.Vector3(
+                   (Math.random() - 0.5) * 0.3,
+                   Math.random() * 0.2,
+                   (Math.random() - 0.5) * 0.3
+               );
+               
+               scene.add(particle);
+               particles.push(particle);
+           }
+
+           let frame = 0;
+           const animateParticles = () => {
+               frame++;
+               particles.forEach(p => {
+                   p.position.add(p.userData.velocity);
+                   p.material.opacity -= 0.03;
+               });
+               
+               if (frame < 30) {
+                   requestAnimationFrame(animateParticles);
+               } else {
+                   particles.forEach(p => scene.remove(p));
+               }
+           };
+           animateParticles();
+       }
+
+       // ==========================================
+       // WEAPON MODEL
+       // ==========================================
+       let weaponGroup = new THREE.Group();
+       camera.add(weaponGroup);
+       scene.add(camera);
+
+       function updateWeaponModel() {
+           while(weaponGroup.children.length > 0) {
+               weaponGroup.remove(weaponGroup.children[0]);
+           }
+
+           const weaponDef = getCurrentWeaponDef();
+           
+           const bodyGeo = new THREE.BoxGeometry(0.15, 0.18, 0.7);
+           const bodyMat = new THREE.MeshStandardMaterial({ color: weaponDef.color });
+           const body = new THREE.Mesh(bodyGeo, bodyMat);
+           weaponGroup.add(body);
+
+           const barrelGeo = new THREE.BoxGeometry(0.08, 0.08, 0.4);
+           const barrelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+           const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+           barrel.position.set(0, 0.03, -0.45);
+           weaponGroup.add(barrel);
+
+           const gripGeo = new THREE.BoxGeometry(0.08, 0.2, 0.12);
+           const gripMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+           const grip = new THREE.Mesh(gripGeo, gripMat);
+           grip.position.set(0, -0.15, 0.15);
+           weaponGroup.add(grip);
+
+           if (weaponDef.name === 'ROCKET') {
+               const tubGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.6, 8);
+               const tubMat = new THREE.MeshStandardMaterial({ color: 0x2a4a2a });
+               const tub = new THREE.Mesh(tubGeo, tubMat);
+               tub.rotation.x = Math.PI / 2;
+               tub.position.set(0, 0.12, -0.25);
+               weaponGroup.add(tub);
+               
+               const tipGeo = new THREE.ConeGeometry(0.05, 0.15, 8);
+               const tipMat = new THREE.MeshStandardMaterial({ color: 0xff4400, emissive: 0x441100 });
+               const tip = new THREE.Mesh(tipGeo, tipMat);
+               tip.rotation.x = -Math.PI / 2;
+               tip.position.set(0, 0.12, -0.6);
+               weaponGroup.add(tip);
+           }
+           
+           if (weaponDef.name === 'GRENADE') {
+               const tubGeo = new THREE.CylinderGeometry(0.06, 0.06, 0.5, 8);
+               const tubMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+               const tub = new THREE.Mesh(tubGeo, tubMat);
+               tub.rotation.x = Math.PI / 2;
+               tub.position.set(0, 0.1, -0.3);
+               weaponGroup.add(tub);
+               
+               const grenadeGeo = new THREE.SphereGeometry(0.06, 8, 8);
+               const grenadeMat = new THREE.MeshStandardMaterial({ color: 0x556600, emissive: 0x222200 });
+               const grenade = new THREE.Mesh(grenadeGeo, grenadeMat);
+               grenade.position.set(0, 0.1, -0.55);
+               weaponGroup.add(grenade);
+           }
+
+           if (weaponDef.name === 'FREEZE') {
+               const tankGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.25, 8);
+               const tankMat = new THREE.MeshStandardMaterial({ color: 0x00FFFF, transparent: true, opacity: 0.7 });
+               const tank = new THREE.Mesh(tankGeo, tankMat);
+               tank.position.set(0, 0.15, 0);
+               weaponGroup.add(tank);
+           }
+
+           if (weaponDef.name === 'SHOTGUN') {
+               const barrel2 = new THREE.Mesh(barrelGeo.clone(), barrelMat.clone());
+               barrel2.position.set(0.06, 0.03, -0.45);
+               weaponGroup.add(barrel2);
+               
+               const barrel3 = new THREE.Mesh(barrelGeo.clone(), barrelMat.clone());
+               barrel3.position.set(-0.06, 0.03, -0.45);
+               weaponGroup.add(barrel3);
+           }
+
+           weaponGroup.position.set(0.3, -0.25, -0.5);
+       }
+
+       updateWeaponModel();
+
+       const muzzleFlash = new THREE.PointLight(0xffaa00, 3, 5);
+       muzzleFlash.position.set(0.3, -0.2, -1.2);
+       muzzleFlash.visible = false;
+       camera.add(muzzleFlash);
+
+       // ==========================================
+       // DROPS SYSTEM
+       // ==========================================
+       const drops = [];
+
+       class Drop {
+           constructor(x, z, type) {
+               this.type = type;
+               this.collected = false;
+               
+               let color, emissive, size;
+               switch(type) {
+                   case 'ammo':
+                       color = 0xffcc00;
+                       emissive = 0x554400;
+                       size = 0.4;
+                       break;
+                   case 'health':
+                       color = 0x00ff00;
+                       emissive = 0x005500;
+                       size = 0.5;
+                       break;
+                   case 'armor':
+                       color = 0x0088ff;
+                       emissive = 0x003366;
+                       size = 0.5;
+                       break;
+                   case 'rocketLauncher':
+                   case 'grenadeLauncher':
+                   case 'freezeGun':
+                   case 'shotgun':
+                       color = 0xff00ff;
+                       emissive = 0x550055;
+                       size = 0.7;
+                       break;
+               }
+
+               const geometry = new THREE.BoxGeometry(size, size, size);
+               const material = new THREE.MeshStandardMaterial({ 
+                   color: color,
+                   emissive: emissive,
+                   emissiveIntensity: 0.5
+               });
+               
+               this.mesh = new THREE.Mesh(geometry, material);
+               this.mesh.position.set(x, size / 2 + 0.1, z);
+               this.mesh.castShadow = false;
+               this.mesh.receiveShadow = false;
+               
+               const glowGeo = new THREE.BoxGeometry(size * 1.3, size * 1.3, size * 1.3);
+               const glowMat = new THREE.MeshBasicMaterial({ 
+                   color: color, 
+                   transparent: true, 
+                   opacity: 0.3 
+               });
+               this.glow = new THREE.Mesh(glowGeo, glowMat);
+               this.mesh.add(this.glow);
+
+               // Enforce 10-item cap: remove oldest drop first
+               while (drops.length >= 10) {
+                   drops[0].removeSelf();
+               }
+
+               scene.add(this.mesh);
+               drops.push(this);
+               this.spawnTime = Date.now();
+           }
+
+           removeSelf() {
+               this.collected = true;
+               scene.remove(this.mesh);
+               const index = drops.indexOf(this);
+               if (index > -1) drops.splice(index, 1);
+           }
+
+           update(time) {
+               // Items stay still — no bobbing or rotating
+           }
+
+           checkPickup(playerPos) {
+               if (this.collected) return;
+               
+               const distance = this.mesh.position.distanceTo(playerPos);
+               if (distance < 1.5) {
+                   this.pickup();
+               }
+           }
+
+           pickup() {
+               this.collected = true;
+               scene.remove(this.mesh);
+               const index = drops.indexOf(this);
+               if (index > -1) drops.splice(index, 1);
+
+               switch(this.type) {
+                   case 'ammo':
+                       const ammoMult = perks.doublePickup.active ? 2 : 1;
+                       getCurrentWeapon().totalAmmo += getCurrentWeaponDef().clipSize * ammoMult;
+                       showNotification(ammoMult > 1 ? '+DOUBLE AMMO 🎒' : '+AMMO', '#ffcc00');
+                       break;
+                   case 'health':
+                       const hpMult = perks.doublePickup.active ? 2 : 1;
+                       gameState.health = Math.min(CONFIG.MAX_HEALTH, gameState.health + 25 * hpMult);
+                       showNotification(hpMult > 1 ? '+50 HEALTH 🎒' : '+25 HEALTH', '#00ff00');
+                       break;
+                   case 'armor':
+                       const armMult = perks.doublePickup.active ? 2 : 1;
+                       gameState.armor = Math.min(CONFIG.MAX_ARMOR, gameState.armor + 25 * armMult);
+                       showNotification(armMult > 1 ? '+50 ARMOR 🎒' : '+25 ARMOR', '#0088ff');
+                       break;
+                   case 'rocketLauncher':
+                   case 'grenadeLauncher':
+                   case 'freezeGun':
+                   case 'shotgun':
+                       addWeapon(this.type);
+                       break;
+               }
+
+               updateUI();
+               updateHealthBar();
+           }
+       }
+
+       function spawnDrop(x, z, isBoss = false, isSuperBoss = false) {
+           if (isSuperBoss) {
+               const specialWeapons = ['rocketLauncher', 'grenadeLauncher', 'freezeGun', 'shotgun'];
+               specialWeapons.forEach((w, i) => {
+                   setTimeout(() => new Drop(x + (i - 1.5) * 1.5, z, w), i * 100);
+               });
+               new Drop(x, z + 2, 'health');
+               new Drop(x, z - 2, 'armor');
+               if (!gameState.flyUnlocked) {
+                   gameState.flyUnlocked = true;
+                   gameState.flyFuel = 100;
+                   const jBtn = document.getElementById('jump-button');
+                   jBtn.textContent = '🚀 FLY';
+                   jBtn.classList.add('fly-mode');
+                   document.getElementById('fuel-bar').style.display = 'block';
+                   updateFuelBar();
+                   showNotification('🚀 JETPACK UNLOCKED! Hold FLY to soar!', '#0af');
+               } else {
+                   gameState.flyFuel = 100;
+                   updateFuelBar();
+                   showNotification('⛽ JETPACK REFUELLED!', '#0af');
+               }
+               showNotification('💀 LEGENDARY DROPS! 💀', '#ff00ff');
+               return;
+           }
+           if (isBoss) {
+               const specialWeapons = ['rocketLauncher', 'grenadeLauncher', 'freezeGun', 'shotgun'];
+               const randomWeapon = specialWeapons[Math.floor(Math.random() * specialWeapons.length)];
+               new Drop(x, z, randomWeapon);
+               showNotification('⭐ SPECIAL WEAPON DROP! ⭐', '#ff00ff');
+               return;
+           }
+
+           const rand = Math.random();
+           if (rand < CONFIG.DROP_CHANCE_AMMO) {
+               new Drop(x, z, 'ammo');
+           } else if (rand < CONFIG.DROP_CHANCE_AMMO + CONFIG.DROP_CHANCE_HEALTH) {
+               new Drop(x, z, 'health');
+           } else if (rand < CONFIG.DROP_CHANCE_AMMO + CONFIG.DROP_CHANCE_HEALTH + CONFIG.DROP_CHANCE_ARMOR) {
+               new Drop(x, z, 'armor');
+           }
+       }
+
+       // ==========================================
+       // WEAPON MANAGEMENT
+       // ==========================================
+       function addWeapon(weaponType) {
+           const existingIndex = gameState.weapons.findIndex(w => w.type === weaponType);
+           if (existingIndex !== -1) {
+               gameState.weapons[existingIndex].totalAmmo += WEAPONS[weaponType].maxAmmo;
+               showNotification(`+${WEAPONS[weaponType].name} AMMO`, '#ff00ff');
+               updateWeaponCycleButton();
+               return;
+           }
+
+           if (gameState.weapons.length < gameState.maxWeaponSlots) {
+               gameState.weapons.push({
+                   type: weaponType,
+                   ammo: WEAPONS[weaponType].clipSize,
+                   totalAmmo: WEAPONS[weaponType].maxAmmo
+               });
+               showNotification(`NEW WEAPON: ${WEAPONS[weaponType].name}!`, '#ff00ff');
+               updateWeaponCycleButton();
+           } else {
+               gameState.weapons[gameState.currentWeaponIndex] = {
+                   type: weaponType,
+                   ammo: WEAPONS[weaponType].clipSize,
+                   totalAmmo: WEAPONS[weaponType].maxAmmo
+               };
+               showNotification(`REPLACED: ${WEAPONS[weaponType].name}!`, '#ff00ff');
+               updateWeaponModel();
+               updateWeaponCycleButton();
+           }
+       }
+
+       function cycleWeapon() {
+           if (gameState.weapons.length <= 1) return;
+           
+           gameState.isReloading = false;
+           gameState.currentWeaponIndex = (gameState.currentWeaponIndex + 1) % gameState.weapons.length;
+           
+           updateWeaponModel();
+           updateWeaponCycleButton();
+           updateUI();
+           
+           const btn = document.getElementById('weapon-cycle-button');
+           btn.classList.remove('weapon-switching');
+           void btn.offsetWidth;
+           btn.classList.add('weapon-switching');
+           
+           const weaponDef = getCurrentWeaponDef();
+           let extraInfo = '';
+           if (weaponDef.explosionRadius) {
+               extraInfo = ` (💥${weaponDef.explosionRadius}m)`;
+           }
+           showNotification(`${weaponDef.icon} ${weaponDef.name}${extraInfo}`, '#0f0');
+       }
+
+       function updateWeaponCycleButton() {
+           const weaponDef = getCurrentWeaponDef();
+           
+           document.getElementById('weapon-icon').textContent = weaponDef.icon;
+           document.getElementById('weapon-name').textContent = weaponDef.name;
+           document.getElementById('weapon-slot-indicator').textContent = 
+               `${gameState.currentWeaponIndex + 1}/${gameState.weapons.length}`;
+           
+           const btn = document.getElementById('weapon-cycle-button');
+           let borderColor = '#0f0';
+           
+           switch(getCurrentWeapon().type) {
+               case 'rocketLauncher': borderColor = '#ff4400'; break;
+               case 'grenadeLauncher': borderColor = '#ffcc00'; break;
+               case 'freezeGun': borderColor = '#00ffff'; break;
+               case 'shotgun': borderColor = '#8B4513'; break;
+           }
+           
+           btn.style.borderColor = borderColor;
+           btn.style.boxShadow = `0 0 15px ${borderColor}40`;
+           document.getElementById('weapon-name').style.color = borderColor;
+           document.getElementById('weapon-name').style.textShadow = `0 0 5px ${borderColor}`;
+       }
+
+       const weaponCycleButton = document.getElementById('weapon-cycle-button');
+       
+       weaponCycleButton.addEventListener('touchstart', (e) => {
+           e.preventDefault();
+           e.stopPropagation();
+           cycleWeapon();
+       }, { passive: false });
+
+       weaponCycleButton.addEventListener('click', (e) => {
+           e.preventDefault();
+           cycleWeapon();
+       });
+
+       // ==========================================
+       // PROJECTILES
+       // ==========================================
+       const projectiles = [];
+
+       class Projectile {
+           constructor(position, direction, weaponType) {
+               this.weaponType = weaponType;
+               this.weaponDef = WEAPONS[weaponType];
+               this.direction = direction.clone().normalize();
+               this.speed = this.weaponDef.projectileSpeed || 0.5;
+               this.alive = true;
+               this.age = 0;
+
+               const size = weaponType === 'rocketLauncher' ? 0.3 : 0.2;
+               const geometry = new THREE.SphereGeometry(size, 8, 8);
+               const color = this.weaponDef.explosionColor || 0xff4400;
+               const material = new THREE.MeshBasicMaterial({ color: color });
+               
+               this.mesh = new THREE.Mesh(geometry, material);
+               this.mesh.position.copy(position);
+               
+               this.light = new THREE.PointLight(color, 3, 8);
+               this.mesh.add(this.light);
+               
+               scene.add(this.mesh);
+               projectiles.push(this);
+           }
+
+           update(deltaTime) {
+               if (!this.alive) return;
+
+               this.age += deltaTime;
+               
+               const movement = this.direction.clone().multiplyScalar(this.speed);
+               
+               if (this.weaponDef.arc) {
+                   movement.y -= this.age * 0.00008;
+               }
+
+               // Store previous position for sweep check
+               const prevPos = this.mesh.position.clone();
+               this.mesh.position.add(movement);
+
+               if (this.mesh.position.y < 0.2) {
+                   this.explode();
+                   return;
+               }
+
+               // Swept zombie collision — check along the path this frame, not just endpoint
+               // Scale hit sphere by zombie sizeMult so superboss (5x) is always hittable
+               for (const zombie of zombies) {
+                   if (zombie.health <= 0) continue;
+                   const sizeMult = zombie.sizeMult || 1;
+                   const hitRadius = 1.2 * sizeMult;
+                   // Check against zombie body centre scaled by size
+                   const zombieCenter = zombie.group.position.clone();
+                   zombieCenter.y = 1.0 * sizeMult;
+                   // Find closest point on segment prevPos->currentPos to zombieCenter
+                   const seg = this.mesh.position.clone().sub(prevPos);
+                   const segLen = seg.length();
+                   if (segLen < 0.001) continue;
+                   const segDir = seg.clone().divideScalar(segLen);
+                   const toCentre = zombieCenter.clone().sub(prevPos);
+                   const t = Math.max(0, Math.min(segLen, toCentre.dot(segDir)));
+                   const closest = prevPos.clone().add(segDir.clone().multiplyScalar(t));
+                   if (closest.distanceTo(zombieCenter) < hitRadius) {
+                       this.explode();
+                       return;
+                   }
+               }
+
+               for (const buildingData of buildings) {
+                   const box = new THREE.Box3();
+                   box.setFromCenterAndSize(
+                       new THREE.Vector3(buildingData.x, buildingData.height / 2, buildingData.z),
+                       new THREE.Vector3(buildingData.width, buildingData.height, buildingData.depth)
+                   );
+                   if (box.containsPoint(this.mesh.position)) {
+                       this.explode();
+                       return;
+                   }
+               }
+
+               if (this.age > 5000) {
+                   this.destroy();
+               }
+           }
+
+           explode() {
+               const radius = this.weaponDef.explosionRadius;
+               const damage = this.weaponDef.damage;
+               const pos = this.mesh.position.clone();
+               const color = this.weaponDef.explosionColor || 0xff4400;
+
+               let zombiesHit = 0;
+               // Hit EVERY zombie in radius — no cap, account for boss/superboss body size
+               for (const zombie of zombies) {
+                   if (zombie.health <= 0) continue;
+                   // Scale hit radius by zombie size so big bosses are easier to hit
+                   const zombieBodyRadius = 0.6 * (zombie.sizeMult || 1);
+                   const effectiveRadius = radius + zombieBodyRadius;
+                   // Check distance to zombie body centre
+                   const zombieCenter = zombie.group.position.clone();
+                   zombieCenter.y = 1.0 * (zombie.sizeMult || 1);
+                   const dist = pos.distanceTo(zombieCenter);
+                   if (dist < effectiveRadius) {
+                       const falloff = 1 - Math.max(0, (dist - zombieBodyRadius) / radius);
+                       zombie.takeDamage(damage * falloff);
+                       zombiesHit++;
+                   }
+               }
+
+               if (zombiesHit > 0) {
+                   showNotification(`💥 ${zombiesHit} HIT!`, '#ff6600');
+               }
+
+               createExplosion(pos.x, pos.y, pos.z, radius, color);
+               this.destroy();
+           }
+
+           destroy() {
+               this.alive = false;
+               scene.remove(this.mesh);
+               const index = projectiles.indexOf(this);
+               if (index > -1) projectiles.splice(index, 1);
+           }
+       }
+
+       function createExplosion(x, y, z, radius, color) {
+           const explosionLight = new THREE.PointLight(color, 8, radius * 1.5);
+           explosionLight.position.set(x, y + 1, z);
+           scene.add(explosionLight);
+
+           const explosionGeo = new THREE.SphereGeometry(radius * 0.3, 16, 16);
+           const explosionMat = new THREE.MeshBasicMaterial({ 
+               color: color, 
+               transparent: true, 
+               opacity: 0.8 
+           });
+           const explosionSphere = new THREE.Mesh(explosionGeo, explosionMat);
+           explosionSphere.position.set(x, y + 0.5, z);
+           scene.add(explosionSphere);
+
+           const ringGeo = new THREE.RingGeometry(0.1, radius, 32);
+           const ringMat = new THREE.MeshBasicMaterial({ 
+               color: color, 
+               transparent: true, 
+               opacity: 0.5,
+               side: THREE.DoubleSide
+           });
+           const ring = new THREE.Mesh(ringGeo, ringMat);
+           ring.rotation.x = -Math.PI / 2;
+           ring.position.set(x, 0.1, z);
+           scene.add(ring);
+
+           let scale = 0.3;
+           let opacity = 0.8;
+           let lightIntensity = 8;
+           
+           const animateExplosion = () => {
+               scale += 0.15;
+               opacity -= 0.04;
+               lightIntensity -= 0.4;
+               
+               explosionSphere.scale.set(scale, scale, scale);
+               explosionMat.opacity = Math.max(0, opacity);
+               ringMat.opacity = Math.max(0, opacity * 0.5);
+               explosionLight.intensity = Math.max(0, lightIntensity);
+               
+               if (opacity > 0) {
+                   requestAnimationFrame(animateExplosion);
+               } else {
+                   scene.remove(explosionSphere);
+                   scene.remove(explosionLight);
+                   scene.remove(ring);
+               }
+           };
+           
+           animateExplosion();
+
+           if (radius >= 20) {
+               shakeScreen(radius / 10);
+           }
+       }
+
+       function shakeScreen(intensity) {
+           const originalPos = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+           let shakeTime = 0;
+           
+           const shake = () => {
+               shakeTime += 16;
+               if (shakeTime < 300) {
+                   const decay = 1 - (shakeTime / 300);
+                   camera.position.x = originalPos.x + (Math.random() - 0.5) * intensity * decay;
+                   camera.position.z = originalPos.z + (Math.random() - 0.5) * intensity * decay;
+                   requestAnimationFrame(shake);
+               } else {
+                   camera.position.x = originalPos.x;
+                   camera.position.z = originalPos.z;
+               }
+           };
+           
+           shake();
+       }
+
+       // ==========================================
+       // HIT EFFECT
+       // ==========================================
+       function createHitEffect(position) {
+           const particleCount = 6; // Reduced from 8
+           for (let i = 0; i < particleCount; i++) {
+               const particleMat = new THREE.MeshBasicMaterial({ 
+                   color: 0xff0000,
+                   transparent: true,
+                   opacity: 1
+               });
+               const particle = new THREE.Mesh(sharedHitParticleGeo, particleMat);
+               particle.position.copy(position);
+               
+               const velocity = new THREE.Vector3(
+                   (Math.random() - 0.5) * 0.2,
+                   Math.random() * 0.15,
+                   (Math.random() - 0.5) * 0.2
+               );
+               
+               scene.add(particle);
+               
+               let life = 1;
+               const animateParticle = () => {
+                   life -= 0.05;
+                   particle.position.add(velocity);
+                   velocity.y -= 0.01;
+                   particle.material.opacity = life;
+                   
+                   if (life > 0) {
+                       requestAnimationFrame(animateParticle);
+                   } else {
+                       scene.remove(particle);
+                   }
+               };
+               animateParticle();
+           }
+       }
+
+       // ==========================================
+       // ZOMBIE CLASS - FIXED MATERIALS AND ANIMATION
+       // ==========================================
+       const zombies = [];
+
+       class Zombie {
+           constructor(x, z, isBoss = false, isSuperBoss = false) {
+               this.isBoss = isBoss || isSuperBoss;
+               this.isSuperBoss = isSuperBoss;
+               this.isAgro = !this.isBoss && Math.random() < CONFIG.ZOMBIE_AGRO_CHANCE;
+               this.frozen = false;
+               this.frozenUntil = 0;
+               this.isMoving = false;
+               
+               this.group = new THREE.Group();
+               this.group.userData.zombie = this;
+
+               const sizeMult = isSuperBoss ? CONFIG.SUPER_BOSS_SIZE_MULT : (isBoss ? CONFIG.BOSS_SIZE_MULT : 1);
+               this.sizeMult = sizeMult;
+
+               if (labubuLoaded && labubuTemplate) {
+                   const model = deepCloneGLTF(labubuTemplate);
+                   model.scale.set(sizeMult, sizeMult, sizeMult);
+                   model.rotation.y = Math.PI;
+                   this.modelBaseY = labubuBaseHeight * sizeMult;
+                   model.position.y = this.modelBaseY;
+
+                   // Tint super boss deep purple/black
+                   if (isSuperBoss) {
+                       model.traverse((child) => {
+                           if (child.isMesh && child.material) {
+                               const mats = Array.isArray(child.material) ? child.material : [child.material];
+                               mats.forEach(m => {
+                                   m.color.setHex(0x330033);
+                                   m.emissive && m.emissive.setHex(0x220011);
+                               });
+                           }
+                           child.userData.zombie = this;
+                       });
+                   } else {
+                       model.traverse((child) => {
+                           child.userData.zombie = this;
+                       });
+                   }
+                   
+                   this.group.add(model);
+                   this.model = model;
+                   this.isLabubu = true;
+                   
+               } else {
+                   this.createProceduralZombie(sizeMult, isBoss, isSuperBoss);
+                   this.isLabubu = false;
+               }
+
+               this.walkCycle = Math.random() * Math.PI * 2;
+               this.walkSpeed = (this.isAgro ? 12 : 8) * (isSuperBoss ? 1.2 : (isBoss ? 0.7 : 1));
+
+               this.group.position.set(x, 0, z);
+               
+               if (isSuperBoss) {
+                   this.health = 100 * CONFIG.SUPER_BOSS_HEALTH_MULT;
+               } else if (isBoss) {
+                   this.health = 100 * CONFIG.BOSS_HEALTH_MULT;
+               } else {
+                   this.health = 100;
+               }
+               this.maxHealth = this.health;
+               
+               if (isSuperBoss) {
+                   this.damage = CONFIG.ZOMBIE_DAMAGE * CONFIG.SUPER_BOSS_DAMAGE_MULT;
+               } else if (isBoss) {
+                   this.damage = CONFIG.ZOMBIE_DAMAGE * CONFIG.BOSS_DAMAGE_MULT;
+               } else {
+                   this.damage = CONFIG.ZOMBIE_DAMAGE * (this.isAgro ? CONFIG.ZOMBIE_AGRO_DAMAGE_MULT : 1);
+               }
+               this.speed = CONFIG.ZOMBIE_SPEED * (this.isAgro ? CONFIG.ZOMBIE_AGRO_SPEED_MULT : 1) * (isSuperBoss ? 1.4 : (isBoss ? 0.7 : 1));
+               
+               this.lastAttackTime = 0;
+               
+               scene.add(this.group);
+               zombies.push(this);
+           }
+
+           createProceduralZombie(sizeMult, isBoss, isSuperBoss = false) {
+               const zombieColor = isSuperBoss ? 0x330033 : (isBoss ? 0x880000 : (this.isAgro ? 0x664422 : 0x228822));
+               const darkColor = isSuperBoss ? 0x110011 : (isBoss ? 0x660000 : (this.isAgro ? 0x443311 : 0x115511));
+               
+               // Body
+               const bodyHeight = 1.2 * sizeMult;
+               const bodyWidth = 0.6 * sizeMult;
+               const bodyGeo = new THREE.BoxGeometry(bodyWidth, bodyHeight, bodyWidth * 0.5);
+               const bodyMat = new THREE.MeshStandardMaterial({ color: zombieColor });
+               this.body = new THREE.Mesh(bodyGeo, bodyMat);
+               this.body.position.y = bodyHeight / 2 + 0.6 * sizeMult;
+               this.body.castShadow = true;
+               this.body.userData.zombie = this;
+               this.group.add(this.body);
+               
+               // Head
+               const headSize = 0.4 * sizeMult;
+               const headGeo = new THREE.SphereGeometry(headSize, 8, 8);
+               const headMat = new THREE.MeshStandardMaterial({ color: darkColor });
+               this.head = new THREE.Mesh(headGeo, headMat);
+               this.head.position.y = bodyHeight + 0.6 * sizeMult + headSize;
+               this.head.castShadow = true;
+               this.head.userData.zombie = this;
+               this.group.add(this.head);
+               
+               // Left Leg
+               const legHeight = 0.6 * sizeMult;
+               const legWidth = 0.15 * sizeMult;
+               const legGeo = new THREE.BoxGeometry(legWidth, legHeight, legWidth);
+               const legMat = new THREE.MeshStandardMaterial({ color: darkColor });
+               
+               this.leftLegPivot = new THREE.Group();
+               this.leftLegPivot.position.set(-0.15 * sizeMult, 0.6 * sizeMult, 0);
+               this.leftLeg = new THREE.Mesh(legGeo, legMat.clone());
+               this.leftLeg.position.y = -legHeight / 2;
+               this.leftLeg.castShadow = true;
+               this.leftLeg.userData.zombie = this;
+               this.leftLegPivot.add(this.leftLeg);
+               this.group.add(this.leftLegPivot);
+               
+               // Right Leg
+               this.rightLegPivot = new THREE.Group();
+               this.rightLegPivot.position.set(0.15 * sizeMult, 0.6 * sizeMult, 0);
+               this.rightLeg = new THREE.Mesh(legGeo, legMat.clone());
+               this.rightLeg.position.y = -legHeight / 2;
+               this.rightLeg.castShadow = true;
+               this.rightLeg.userData.zombie = this;
+               this.rightLegPivot.add(this.rightLeg);
+               this.group.add(this.rightLegPivot);
+               
+               // Left Arm
+               const armHeight = 0.5 * sizeMult;
+               const armWidth = 0.1 * sizeMult;
+               const armGeo = new THREE.BoxGeometry(armWidth, armHeight, armWidth);
+               
+               this.leftArmPivot = new THREE.Group();
+               this.leftArmPivot.position.set(-0.35 * sizeMult, 1.4 * sizeMult, 0);
+               this.leftArm = new THREE.Mesh(armGeo, legMat.clone());
+               this.leftArm.position.y = -armHeight / 2;
+               this.leftArm.castShadow = true;
+               this.leftArm.userData.zombie = this;
+               this.leftArmPivot.add(this.leftArm);
+               this.group.add(this.leftArmPivot);
+               
+               // Right Arm
+               this.rightArmPivot = new THREE.Group();
+               this.rightArmPivot.position.set(0.35 * sizeMult, 1.4 * sizeMult, 0);
+               this.rightArm = new THREE.Mesh(armGeo, legMat.clone());
+               this.rightArm.position.y = -armHeight / 2;
+               this.rightArm.castShadow = true;
+               this.rightArm.userData.zombie = this;
+               this.rightArmPivot.add(this.rightArm);
+               this.group.add(this.rightArmPivot);
+               
+               this.model = this.body;
+               this.hasProceduralLimbs = true;
+               this.modelBaseY = 0;
+           }
+
+           update(playerPos, deltaTime) {
+               if (this.health <= 0) return;
+
+               if (this.frozen) {
+                   if (Date.now() > this.frozenUntil) {
+                       this.frozen = false;
+                       this.unfreezeEffect();
+                   } else {
+                       return;
+                   }
+               }
+
+               const direction = new THREE.Vector3();
+               // Invisibility perk: zombies walk toward map centre instead of player
+               const targetPos = perks.invisibility.active
+                   ? new THREE.Vector3(0, 0, 0)
+                   : playerPos;
+               direction.subVectors(targetPos, this.group.position);
+               direction.y = 0;
+               const distance = direction.length();
+               direction.normalize();
+
+               // Only attack player if not invisible
+               if (!perks.invisibility.active && distance < CONFIG.ZOMBIE_ATTACK_RANGE) {
+                   this.isMoving = false;
+                   const now = Date.now();
+                   if (now - this.lastAttackTime > CONFIG.ZOMBIE_ATTACK_COOLDOWN) {
+                       this.attack();
+                       this.lastAttackTime = now;
+                   }
+                   this.playAttackAnimation(deltaTime);
+               } else {
+                   this.isMoving = true;
+                   const PAD = 1.0; // clearance from building walls
+                   const myPos = this.group.position;
+
+                   // Returns true if point is inside any building
+                   const inBuilding = (px, pz) => {
+                       for (const b of buildings) {
+                           if (px > b.x - b.width/2 - PAD && px < b.x + b.width/2 + PAD &&
+                               pz > b.z - b.depth/2 - PAD && pz < b.z + b.depth/2 + PAD) return true;
+                       }
+                       return false;
+                   };
+
+                   // If somehow spawned/pushed inside a building, eject outward immediately
+                   if (inBuilding(myPos.x, myPos.z)) {
+                       // Push toward map centre to escape
+                       const ex = myPos.x === 0 ? 0.1 : -myPos.x * 0.05;
+                       const ez = myPos.z === 0 ? 0.1 : -myPos.z * 0.05;
+                       this.group.position.x += ex;
+                       this.group.position.z += ez;
+                       this.playWalkAnimation(deltaTime);
+                       this.group.lookAt(targetPos.x, this.group.position.y, targetPos.z);
+                       return;
+                   }
+
+                   const step = this.speed;
+                   const dx = direction.x * step;
+                   const dz = direction.z * step;
+
+                   const directBlocked = inBuilding(myPos.x + dx, myPos.z + dz);
+
+                   if (!directBlocked) {
+                       this.group.position.x += dx;
+                       this.group.position.z += dz;
+                       // Only reset turn dir after 60 clear frames to prevent corner oscillation
+                       this._clearTimer = (this._clearTimer || 0) + 1;
+                       if (this._clearTimer > 60) {
+                           this._wallFollowDir = undefined;
+                           this._clearTimer = 0;
+                       }
+                   } else {
+                       this._clearTimer = 0;
+
+                       // Pick turn direction ONCE per obstacle by scoring each building corner
+                       if (this._wallFollowDir === undefined) {
+                           let bestScore = Infinity;
+                           let bestSide = 1;
+                           for (const b of buildings) {
+                               // Only look at the building actually blocking the next step
+                               const nx = myPos.x + dx, nz = myPos.z + dz;
+                               if (!(nx > b.x - b.width/2 - PAD && nx < b.x + b.width/2 + PAD &&
+                                     nz > b.z - b.depth/2 - PAD && nz < b.z + b.depth/2 + PAD)) continue;
+                               const hw = b.width/2 + PAD + 0.3;
+                               const hd = b.depth/2 + PAD + 0.3;
+                               const corners = [
+                                   [b.x - hw, b.z - hd],
+                                   [b.x + hw, b.z - hd],
+                                   [b.x - hw, b.z + hd],
+                                   [b.x + hw, b.z + hd],
+                               ];
+                               for (const [cx, cz] of corners) {
+                                   if (inBuilding(cx, cz)) continue;
+                                   const score = Math.hypot(cx - myPos.x, cz - myPos.z)
+                                               + Math.hypot(cx - targetPos.x, cz - targetPos.z);
+                                   if (score < bestScore) {
+                                       bestScore = score;
+                                       // Cross product sign = which side of our direction this corner is on
+                                       const cross = direction.x * (cz - myPos.z) - direction.z * (cx - myPos.x);
+                                       bestSide = cross >= 0 ? 1 : -1;
+                                   }
+                               }
+                           }
+                           this._wallFollowDir = bestSide;
+                       }
+
+                       // Sweep angles in the committed direction only — no flipping mid-obstacle
+                       let moved = false;
+                       for (let deg = 15; deg < 180; deg += 15) {
+                           const rad = deg * this._wallFollowDir * Math.PI / 180;
+                           const cos = Math.cos(rad), sin = Math.sin(rad);
+                           const nx = (direction.x * cos - direction.z * sin) * step;
+                           const nz = (direction.x * sin + direction.z * cos) * step;
+                           if (!inBuilding(myPos.x + nx, myPos.z + nz)) {
+                               this.group.position.x += nx;
+                               this.group.position.z += nz;
+                               moved = true;
+                               break;
+                           }
+                       }
+                       // Last resort: try opposite side
+                       if (!moved) {
+                           for (let deg = 15; deg <= 180; deg += 15) {
+                               const rad = deg * -this._wallFollowDir * Math.PI / 180;
+                               const cos = Math.cos(rad), sin = Math.sin(rad);
+                               const nx = (direction.x * cos - direction.z * sin) * step;
+                               const nz = (direction.x * sin + direction.z * cos) * step;
+                               if (!inBuilding(myPos.x + nx, myPos.z + nz)) {
+                                   this.group.position.x += nx;
+                                   this.group.position.z += nz;
+                                   moved = true;
+                                   break;
+                               }
+                           }
+                       }
+                   }
+                   this.playWalkAnimation(deltaTime);
+               }
+
+               this.group.lookAt(targetPos.x, this.group.position.y, targetPos.z);
+           }
+
+           playWalkAnimation(deltaTime) {
+               this.walkCycle += deltaTime * 0.001 * this.walkSpeed;
+               
+               if (this.isLabubu && this.model) {
+                   // Walking animation for Labubu model
+                   // Use the pre-calculated base Y and only add small offsets
+                   const bobAmount = 0.08 * this.sizeMult;
+                   const bobOffset = Math.abs(Math.sin(this.walkCycle * 2)) * bobAmount;
+                   
+                   // Keep Y position stable, just add bob
+                   this.model.position.y = this.modelBaseY + bobOffset;
+                   
+                   // Forward lean while walking
+                   this.model.rotation.x = Math.sin(this.walkCycle) * 0.08;
+                   
+                   // Side-to-side tilt (alternating with steps)
+                   this.model.rotation.z = Math.sin(this.walkCycle) * 0.06;
+                   
+               } else if (this.hasProceduralLimbs) {
+                   const legSwing = Math.sin(this.walkCycle) * 0.6;
+                   const armSwing = Math.sin(this.walkCycle) * 0.4;
+                   
+                   this.leftLegPivot.rotation.x = legSwing;
+                   this.rightLegPivot.rotation.x = -legSwing;
+                   
+                   this.leftArmPivot.rotation.x = -armSwing;
+                   this.rightArmPivot.rotation.x = armSwing;
+                   
+                   this.leftArmPivot.rotation.z = 0.2 + Math.abs(Math.sin(this.walkCycle)) * 0.1;
+                   this.rightArmPivot.rotation.z = -0.2 - Math.abs(Math.sin(this.walkCycle)) * 0.1;
+                   
+                   const bobAmount = 0.08;
+                   const baseBodyY = 1.2 * this.sizeMult;
+                   const baseHeadY = 1.9 * this.sizeMult;
+                   this.body.position.y = baseBodyY + Math.abs(Math.sin(this.walkCycle * 2)) * bobAmount;
+                   this.head.position.y = baseHeadY + Math.abs(Math.sin(this.walkCycle * 2)) * bobAmount;
+                   
+                   this.body.rotation.y = Math.sin(this.walkCycle) * 0.1;
+                   this.head.rotation.y = Math.sin(this.walkCycle) * 0.05;
+               }
+           }
+
+           playAttackAnimation(deltaTime) {
+               const attackPhase = (Date.now() % 500) / 500;
+               
+               if (this.isLabubu && this.model) {
+                   // Lunge forward attack
+                   this.model.rotation.x = Math.sin(attackPhase * Math.PI) * 0.4;
+                   // Keep Y stable during attack
+                   this.model.position.y = this.modelBaseY;
+               } else if (this.hasProceduralLimbs) {
+                   const reachAngle = Math.sin(attackPhase * Math.PI) * 1.2;
+                   this.leftArmPivot.rotation.x = -reachAngle;
+                   this.rightArmPivot.rotation.x = -reachAngle;
+                   this.leftArmPivot.rotation.z = 0.1;
+                   this.rightArmPivot.rotation.z = -0.1;
+                   this.body.rotation.x = Math.sin(attackPhase * Math.PI) * 0.2;
+               }
+           }
+
+           attack() {
+               let damage = this.damage;
+               
+               if (gameState.armor > 0) {
+                   const armorDamage = Math.min(gameState.armor, damage * 0.7);
+                   gameState.armor -= armorDamage;
+                   damage -= armorDamage;
+               }
+               
+               gameState.health -= damage;
+               updateHealthBar();
+               showDamageFlash();
+               
+               if (gameState.health <= 0) {
+                   gameOver();
+               }
+           }
+
+           takeDamage(damage, isFreeze = false) {
+               this.health -= damage;
+               
+               this.flashDamage();
+
+               if (isFreeze && !this.isBoss) {
+                   this.frozen = true;
+                   this.frozenUntil = Date.now() + WEAPONS.freezeGun.freezeDuration;
+                   this.applyFreezeEffect();
+               }
+
+               if (this.health <= 0) {
+                   this.die();
+               }
+           }
+
+           flashDamage() {
+               this.group.traverse((child) => {
+                   if (child.isMesh && child.material) {
+                       const mats = Array.isArray(child.material) ? child.material : [child.material];
+                       mats.forEach(mat => {
+                           mat.emissive = new THREE.Color(0xff0000);
+                           mat.emissiveIntensity = 0.8;
+                       });
+                       
+                       setTimeout(() => {
+                           mats.forEach(mat => {
+                               if (mat && !this.frozen) {
+                                   mat.emissive = new THREE.Color(0x000000);
+                                   mat.emissiveIntensity = 0;
+                               }
+                           });
+                       }, 100);
+                   }
+               });
+           }
+
+           applyFreezeEffect() {
+               this.group.traverse((child) => {
+                   if (child.isMesh && child.material) {
+                       const mats = Array.isArray(child.material) ? child.material : [child.material];
+                       mats.forEach(mat => {
+                           // Store original color
+                           if (!mat.userData) mat.userData = {};
+                           mat.userData.originalColor = mat.color.getHex();
+                           
+                           // Apply ice effect
+                           mat.color.setHex(0xaaddff);
+                           mat.emissive = new THREE.Color(0x00ffff);
+                           mat.emissiveIntensity = 0.4;
+                       });
+                   }
+               });
+           }
+
+           unfreezeEffect() {
+               this.group.traverse((child) => {
+                   if (child.isMesh && child.material) {
+                       const mats = Array.isArray(child.material) ? child.material : [child.material];
+                       mats.forEach(mat => {
+                           // Restore original color
+                           if (mat.userData && mat.userData.originalColor !== undefined) {
+                               mat.color.setHex(mat.userData.originalColor);
+                           }
+                           mat.emissive = new THREE.Color(0x000000);
+                           mat.emissiveIntensity = 0;
+                       });
+                   }
+               });
+           }
+
+           die() {
+               const dropX = this.group.position.x;
+               const dropZ = this.group.position.z;
+               
+               this.createDeathEffect();
+               
+               scene.remove(this.group);
+               const index = zombies.indexOf(this);
+               if (index > -1) zombies.splice(index, 1);
+               
+               gameState.kills++;
+               
+               // Combo system
+               const now = Date.now();
+               if (now - gameState.lastKillTime < 3000) {
+                   gameState.killStreak++;
+                   gameState.comboMultiplier = Math.min(5, 1 + Math.floor(gameState.killStreak / 3));
+               } else {
+                   gameState.killStreak = 1;
+                   gameState.comboMultiplier = 1;
+               }
+               gameState.lastKillTime = now;
+               
+               const baseScore = this.isSuperBoss ? 2000 : (this.isBoss ? 500 : (this.isAgro ? 150 : 100));
+               const bonusScore = Math.floor(baseScore * gameState.comboMultiplier);
+               gameState.score += bonusScore;
+               // Award coins: superboss=2000, boss=50, agro=15, normal=10
+               const coinsEarned = this.isSuperBoss ? 2000 : (this.isBoss ? 50 : (this.isAgro ? 15 : 10));
+               gameState.coins += coinsEarned * (perks.doublePickup.active ? 2 : 1);
+               
+               if (gameState.comboMultiplier >= 2) {
+                   showComboFlash(gameState.comboMultiplier, bonusScore);
+               }
+               
+               if (gameState.score > gameState.highScore) {
+                   gameState.highScore = gameState.score;
+                   localStorage.setItem('zombieHighScore', gameState.highScore);
+               }
+               
+               spawnDrop(dropX, dropZ, this.isBoss, this.isSuperBoss);
+               
+               updateUI();
+
+               if (this.isBoss) {
+                   gameState.bossDefeated = true;
+                   gameState.bossKilled = true;
+                   if (this.isSuperBoss) {
+                       showNotification('💀 SUPER BOSS DEFEATED! +2000 💰', '#ff00ff');
+                   } else {
+                       showNotification('🏆 BOSS DEFEATED! 🏆', '#ffcc00');
+                   }
+                   checkWaveComplete();
+               } else {
+                   gameState.regularZombiesKilled++;
+                   // Trigger boss once all regular zombies are cleared
+                   checkSpawnBoss();
+                   // In case boss was already killed somehow, check wave complete
+                   checkWaveComplete();
+               }
+           }
+
+           createDeathEffect() {
+               const pos = this.group.position.clone();
+               
+               for (let i = 0; i < 10; i++) { // Reduced from 15
+                   const particleMat = new THREE.MeshBasicMaterial({ 
+                       color: this.isBoss ? 0xff0000 : 0x00ff00,
+                       transparent: true,
+                       opacity: 1
+                   });
+                   const particle = new THREE.Mesh(sharedDeathParticleGeo, particleMat);
+                   particle.position.copy(pos);
+                   particle.position.y += Math.random() * 2;
+                   
+                   const velocity = new THREE.Vector3(
+                       (Math.random() - 0.5) * 0.3,
+                       Math.random() * 0.2,
+                       (Math.random() - 0.5) * 0.3
+                   );
+                   
+                   scene.add(particle);
+                   
+                   let life = 1;
+                   const animateParticle = () => {
+                       life -= 0.03;
+                       particle.position.add(velocity);
+                       velocity.y -= 0.01;
+                       particle.material.opacity = life;
+                       particle.rotation.x += 0.1;
+                       particle.rotation.y += 0.1;
+                       
+                       if (life > 0) {
+                           requestAnimationFrame(animateParticle);
+                       } else {
+                           scene.remove(particle);
+                       }
+                   };
+                   animateParticle();
+               }
+           }
+       }
+
+       // ==========================================
+       // WAVE MANAGEMENT
+       // ==========================================
+       function isSuperbossWave() {
+           return gameState.wave % 5 === 0;
+       }
+
+       function spawnZombies(count) {
+           gameState.bossSpawned = false;
+           gameState.bossDefeated = false;
+           gameState.bossKilled = false;
+           gameState.regularZombiesKilled = 0;
+           gameState.regularZombiesSpawned = 0;
+
+           if (isSuperbossWave()) {
+               // Super boss wave — spawn only the super boss immediately, no regulars
+               gameState.regularZombiesTotal = 0;
+               gameState.bossSpawned = true;
+
+               const warning = document.getElementById('boss-warning');
+               warning.textContent = '💀 SUPER BOSS INCOMING 💀';
+               warning.style.color = '#ff00ff';
+               warning.style.display = 'block';
+               showNotification('💀 SUPER BOSS WAVE!', '#ff00ff');
+
+               setTimeout(() => {
+                   if (gameState.isGameOver) return;
+                   warning.style.display = 'none';
+                   warning.textContent = '⚠️ BOSS INCOMING ⚠️';
+                   warning.style.color = '';
+                   let bx, bz, attempts = 0;
+                   do {
+                       const angle = Math.random() * Math.PI * 2;
+                       bx = Math.cos(angle) * 48; bz = Math.sin(angle) * 48;
+                       attempts++;
+                   } while (attempts < 30 && buildings.some(b =>
+                       Math.abs(bx - b.x) < b.width / 2 + 4 && Math.abs(bz - b.z) < b.depth / 2 + 4
+                   ));
+                   new Zombie(bx, bz, false, true);
+                   updateUI();
+               }, 3000);
+           } else {
+               // Normal wave — stagger-spawn regulars, boss spawns after all die
+               gameState.regularZombiesTotal = count;
+
+               for (let i = 0; i < count; i++) {
+                   setTimeout(() => {
+                       if (gameState.isGameOver) return;
+                       let sx, sz, attempts = 0;
+                       do {
+                           const angle = Math.random() * Math.PI * 2;
+                           const distance = 45 + Math.random() * 15;
+                           sx = Math.cos(angle) * distance;
+                           sz = Math.sin(angle) * distance;
+                           attempts++;
+                       } while (attempts < 30 && buildings.some(b =>
+                           Math.abs(sx - b.x) < b.width / 2 + 4 &&
+                           Math.abs(sz - b.z) < b.depth / 2 + 4
+                       ));
+                       new Zombie(sx, sz, false);
+                       gameState.regularZombiesSpawned++;
+                       updateUI();
+                   }, i * 300);
+               }
+           }
+       }
+
+       function checkSpawnBoss() {
+           // Only called on normal waves — spawn regular boss after all regulars die
+           if (gameState.bossSpawned) return;
+           if (gameState.regularZombiesKilled < gameState.regularZombiesTotal) return;
+           if (gameState.isGameOver) return;
+
+           gameState.bossSpawned = true;
+
+           const warning = document.getElementById('boss-warning');
+           warning.style.display = 'block';
+           showNotification('⚠️ BOSS INCOMING!', '#ff0000');
+
+           setTimeout(() => {
+               if (gameState.isGameOver) return;
+               warning.style.display = 'none';
+               let bx, bz, attempts = 0;
+               do {
+                   const angle = Math.random() * Math.PI * 2;
+                   bx = Math.cos(angle) * 48; bz = Math.sin(angle) * 48;
+                   attempts++;
+               } while (attempts < 30 && buildings.some(b =>
+                   Math.abs(bx - b.x) < b.width / 2 + 4 && Math.abs(bz - b.z) < b.depth / 2 + 4
+               ));
+               new Zombie(bx, bz, true);
+               updateUI();
+           }, 2000);
+       }
+
+       function checkWaveComplete() {
+           // Super boss wave: no regulars, just need boss killed
+           if (isSuperbossWave()) {
+               if (gameState.bossKilled) {
+                   setTimeout(() => { if (!gameState.isGameOver) nextWave(); }, 1000);
+               }
+               return;
+           }
+           // Normal wave
+           if (gameState.bossKilled && gameState.regularZombiesKilled >= gameState.regularZombiesTotal) {
+               setTimeout(() => { if (!gameState.isGameOver) nextWave(); }, 500);
+           }
+       }
+
+       function nextWave() {
+           gameState.wave++;
+           gameState.zombiesThisWave = Math.floor(5 * Math.pow(1.25, gameState.wave - 1));
+           gameState.health = Math.min(CONFIG.MAX_HEALTH, gameState.health + 30);
+
+           // Every 10 waves, increase zombie speed slightly
+           if (gameState.wave % 10 === 0) {
+               CONFIG.ZOMBIE_SPEED = Math.min(0.09, CONFIG.ZOMBIE_SPEED * 1.1);
+               showNotification('⚡ ZOMBIES FASTER!', '#ff0000');
+           }
+
+           updateUI();
+           updateHealthBar();
+
+           if (isSuperbossWave()) {
+               showNotification(`💀 WAVE ${gameState.wave} — SUPER BOSS WAVE! 💀`, '#ff00ff');
+           } else {
+               showNotification(`WAVE ${gameState.wave} STARTING!`, '#ffcc00');
+           }
+
+           setTimeout(() => {
+               spawnZombies(gameState.zombiesThisWave);
+           }, 3000);
+       }
+
+       // ==========================================
+       // NOTIFICATIONS
+       // ==========================================
+       function showNotification(text, color = '#0f0') {
+           const notif = document.getElementById('drop-notification');
+           notif.textContent = text;
+           notif.style.color = color;
+           notif.style.textShadow = `0 0 10px ${color}`;
+           notif.style.display = 'block';
+           
+           setTimeout(() => {
+               notif.style.display = 'none';
+           }, 2000);
+       }
+
+       let comboTimeout = null;
+       function showComboFlash(multiplier, bonus) {
+           const el = document.getElementById('combo-display');
+           const colors = ['','','#ffcc00','#ff6600','#ff2200','#ff00ff'];
+           const color = colors[Math.min(multiplier, 5)];
+           el.style.color = color;
+           el.style.textShadow = `0 0 25px ${color}, 2px 2px 6px #000`;
+           el.innerHTML = `💥 x${multiplier} COMBO!<br><span style="font-size:20px">+${bonus}</span>`;
+           el.style.display = 'block';
+           el.style.animation = 'none';
+           void el.offsetWidth;
+           el.style.animation = 'comboAnim 0.4s ease-out';
+           if (comboTimeout) clearTimeout(comboTimeout);
+           comboTimeout = setTimeout(() => el.style.display = 'none', 1500);
+       }
+
+       // ==========================================
+       // CONTROLS
+       // ==========================================
+       const moveState = {
+           joystickActive: false,
+           joystickX: 0,
+           joystickY: 0
+       };
+
+       const joystickArea = document.getElementById('joystick-area');
+       const joystickStick = document.getElementById('joystick-stick');
+       let joystickCenter = { x: 0, y: 0 };
+       let joystickTouchId = null;
+
+       function updateJoystickCenter() {
+           const rect = joystickArea.getBoundingClientRect();
+           joystickCenter = {
+               x: rect.left + rect.width / 2,
+               y: rect.top + rect.height / 2
+           };
+       }
+       updateJoystickCenter();
+
+       joystickArea.addEventListener('touchstart', (e) => {
+           e.preventDefault();
+           e.stopPropagation();
+           moveState.joystickActive = true;
+           joystickTouchId = e.touches[0].identifier;
+           updateJoystickCenter();
+       }, { passive: false });
+
+       joystickArea.addEventListener('touchmove', (e) => {
+           e.preventDefault();
+           e.stopPropagation();
+           if (!moveState.joystickActive) return;
+
+           let touch = null;
+           for (let i = 0; i < e.touches.length; i++) {
+               if (e.touches[i].identifier === joystickTouchId) {
+                   touch = e.touches[i];
+                   break;
+               }
+           }
+           if (!touch) return;
+
+           const deltaX = touch.clientX - joystickCenter.x;
+           const deltaY = touch.clientY - joystickCenter.y;
+           
+           const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+           const maxDistance = 40;
+           
+           if (distance > maxDistance) {
+               const angle = Math.atan2(deltaY, deltaX);
+               moveState.joystickX = Math.cos(angle) * maxDistance;
+               moveState.joystickY = Math.sin(angle) * maxDistance;
+           } else {
+               moveState.joystickX = deltaX;
+               moveState.joystickY = deltaY;
+           }
+           
+           joystickStick.style.transform = `translate(calc(-50% + ${moveState.joystickX}px), calc(-50% + ${moveState.joystickY}px))`;
+       }, { passive: false });
+
+       joystickArea.addEventListener('touchend', (e) => {
+           e.preventDefault();
+           moveState.joystickActive = false;
+           moveState.joystickX = 0;
+           moveState.joystickY = 0;
+           joystickTouchId = null;
+           joystickStick.style.transform = 'translate(-50%, -50%)';
+       }, { passive: false });
+
+       // Shooting
+       const shootButton = document.getElementById('shoot-button');
+       let isShooting = false;
+       let lastShootTime = 0;
+
+       shootButton.addEventListener('touchstart', (e) => {
+           e.preventDefault();
+           e.stopPropagation();
+           isShooting = true;
+       }, { passive: false });
+
+       shootButton.addEventListener('touchend', (e) => {
+           e.preventDefault();
+           isShooting = false;
+       }, { passive: false });
+
+       function shoot() {
+           const currentWeapon = getCurrentWeapon();
+           const weaponDef = getCurrentWeaponDef();
+           
+           if (gameState.isReloading || currentWeapon.ammo <= 0 || gameState.isGameOver) return;
+
+           const now = Date.now();
+           if (now - lastShootTime < weaponDef.fireRate / (perks.doubleTap.active ? 2 : 1)) return;
+           lastShootTime = now;
+
+           currentWeapon.ammo--;
+           updateUI();
+
+           muzzleFlash.color.setHex(weaponDef.name === 'FREEZE' ? 0x00ffff : (weaponDef.explosionColor || 0xffaa00));
+           muzzleFlash.visible = true;
+           setTimeout(() => muzzleFlash.visible = false, 50);
+
+           weaponGroup.position.z += weaponDef.recoil;
+           weaponGroup.rotation.x -= weaponDef.recoil * 0.5;
+           setTimeout(() => {
+               weaponGroup.position.z = -0.5;
+               weaponGroup.rotation.x = 0;
+           }, 60);
+
+           if (weaponDef.projectile) {
+               const direction = new THREE.Vector3(0, 0, -1);
+               direction.applyQuaternion(camera.quaternion);
+               const startPos = camera.position.clone().add(direction.clone().multiplyScalar(1));
+               new Projectile(startPos, direction, currentWeapon.type);
+           } else {
+               const pellets = weaponDef.pellets || 1;
+               
+               for (let p = 0; p < pellets; p++) {
+                   const spread = weaponDef.spread || 0;
+                   const spreadX = (Math.random() - 0.5) * spread;
+                   const spreadY = (Math.random() - 0.5) * spread;
+                   
+                   const raycaster = new THREE.Raycaster();
+                   raycaster.setFromCamera(new THREE.Vector2(spreadX, spreadY), camera);
+
+                   // Collect zombie meshes
+                   const hitTargets = [];
+                   zombies.forEach(z => {
+                       if (z.health > 0 && z.group) hitTargets.push(z.group);
+                   });
+
+                   // Collect building meshes to block bullets
+                   const wallTargets = [];
+                   buildings.forEach(b => wallTargets.push(b.mesh));
+
+                   const zombieHits = raycaster.intersectObjects(hitTargets, true);
+                   const wallHits = raycaster.intersectObjects(wallTargets, true);
+
+                   // Only register zombie hit if no wall is closer
+                   const closestWall = wallHits.length > 0 ? wallHits[0].distance : Infinity;
+
+                   if (zombieHits.length > 0 && zombieHits[0].distance < closestWall) {
+                       const hitObject = zombieHits[0].object;
+                       const zombie = hitObject.userData.zombie;
+
+                       if (zombie && zombie.health > 0) {
+                           const damage = weaponDef.damage * (perks.hollowPoints.active ? 1.25 : 1);
+                           const isFreeze = weaponDef.name === 'FREEZE';
+                           zombie.takeDamage(damage, isFreeze);
+                           createHitEffect(zombieHits[0].point);
+                       }
+                   }
+               }
+           }
+
+           if (currentWeapon.ammo === 0 && currentWeapon.totalAmmo > 0) {
+               reload();
+           }
+       }
+
+       // Reload
+       const reloadButton = document.getElementById('reload-button');
+       reloadButton.addEventListener('touchstart', (e) => {
+           e.preventDefault();
+           reload();
+       }, { passive: false });
+
+       function reload() {
+           const currentWeapon = getCurrentWeapon();
+           const weaponDef = getCurrentWeaponDef();
+           
+           if (gameState.isReloading || currentWeapon.totalAmmo === 0 || currentWeapon.ammo === weaponDef.clipSize) return;
+
+           gameState.isReloading = true;
+           reloadButton.style.opacity = '0.5';
+           reloadButton.textContent = '...';
+
+           setTimeout(() => {
+               const ammoNeeded = weaponDef.clipSize - currentWeapon.ammo;
+               const ammoToReload = Math.min(ammoNeeded, currentWeapon.totalAmmo);
+               
+               currentWeapon.ammo += ammoToReload;
+               currentWeapon.totalAmmo -= ammoToReload;
+               gameState.isReloading = false;
+               reloadButton.style.opacity = '1';
+               reloadButton.textContent = 'RELOAD';
+               
+               updateUI();
+           }, 1500);
+       }
+
+       // ==========================================
+       // UI UPDATES
+       // ==========================================
+       function updateFuelBar() {
+           const pct = Math.max(0, Math.min(100, gameState.flyFuel));
+           document.getElementById('fuel-value').textContent = Math.floor(pct);
+           document.getElementById('fuel-fill').style.width = pct + '%';
+           document.getElementById('fuel-fill').style.background = pct < 20
+               ? 'linear-gradient(90deg,#f40,#f80)'
+               : 'linear-gradient(90deg,#0af,#0ff)';
+       }
+
+       function updateUI() {
+           const currentWeapon = getCurrentWeapon();
+           const weaponDef = getCurrentWeaponDef();
+           
+           document.getElementById('ammo-count').textContent = `${currentWeapon.ammo}/${currentWeapon.totalAmmo}`;
+           document.getElementById('kill-count').textContent = gameState.kills;
+           document.getElementById('score').textContent = gameState.score;
+           document.getElementById('coins-count').textContent = gameState.coins;
+           document.getElementById('wave-number').textContent = gameState.wave;
+           document.getElementById('zombie-count').textContent = zombies.length;
+           
+           const ammoPercent = (currentWeapon.ammo / weaponDef.clipSize) * 100;
+           document.getElementById('ammo-fill').style.width = ammoPercent + '%';
+           
+           updateWeaponCycleButton();
+       }
+
+       function updateHealthBar() {
+           const healthPercent = (gameState.health / CONFIG.MAX_HEALTH) * 100;
+           document.getElementById('health-fill').style.width = Math.max(0, healthPercent) + '%';
+           document.getElementById('health-value').textContent = Math.max(0, Math.floor(gameState.health));
+           
+           const armorPercent = (gameState.armor / CONFIG.MAX_ARMOR) * 100;
+           document.getElementById('armor-fill').style.width = armorPercent + '%';
+           document.getElementById('armor-value').textContent = Math.floor(gameState.armor);
+           
+           const healthBar = document.getElementById('health-bar');
+           if (healthPercent < 30) {
+               healthBar.classList.add('low-health');
+           } else {
+               healthBar.classList.remove('low-health');
+           }
+       }
+
+       function showDamageFlash() {
+           const flash = document.getElementById('damage-flash');
+           flash.style.opacity = '1';
+           setTimeout(() => flash.style.opacity = '0', 200);
+       }
+
+       function gameOver() {
+           gameState.isGameOver = true;
+           document.getElementById('final-wave').textContent = gameState.wave;
+           document.getElementById('final-kills').textContent = gameState.kills;
+           document.getElementById('final-score').textContent = gameState.score;
+           document.getElementById('final-high-score').textContent = gameState.highScore;
+           document.getElementById('game-over').style.display = 'block';
+       }
+
+       document.getElementById('restart-button').addEventListener('click', () => location.reload());
+       document.getElementById('restart-button').addEventListener('touchstart', (e) => {
+           e.preventDefault();
+           location.reload();
+       }, { passive: false });
+
+       // ==========================================
+       // PLAYER MOVEMENT
+       // ==========================================
+       function updatePlayer(deltaTime) {
+           if (gameState.isGameOver) return;
+           
+           const isSprinting = keys['ShiftLeft'] || keys['ShiftRight'];
+           const speed = CONFIG.PLAYER_SPEED * (isSprinting ? 1.7 : 1) * getSpeedMultiplier();
+           const movement = new THREE.Vector3();
+
+           if (moveState.joystickActive) {
+               const forward = new THREE.Vector3(0, 0, -1);
+               forward.applyQuaternion(camera.quaternion);
+               forward.y = 0;
+               forward.normalize();
+
+               const right = new THREE.Vector3(1, 0, 0);
+               right.applyQuaternion(camera.quaternion);
+               right.y = 0;
+               right.normalize();
+
+               const normalizedX = moveState.joystickX / 40;
+               const normalizedY = moveState.joystickY / 40;
+
+               movement.add(forward.clone().multiplyScalar(-normalizedY * speed));
+               movement.add(right.clone().multiplyScalar(normalizedX * speed));
+           }
+
+           // WASD keyboard movement
+           if (keys['KeyW'] || keys['ArrowUp']) {
+               const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+               forward.y = 0; forward.normalize();
+               movement.add(forward.multiplyScalar(speed));
+           }
+           if (keys['KeyS'] || keys['ArrowDown']) {
+               const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(camera.quaternion);
+               forward.y = 0; forward.normalize();
+               movement.add(forward.multiplyScalar(speed));
+           }
+           if (keys['KeyA'] || keys['ArrowLeft']) {
+               const right = new THREE.Vector3(-1, 0, 0).applyQuaternion(camera.quaternion);
+               right.y = 0; right.normalize();
+               movement.add(right.multiplyScalar(speed));
+           }
+           if (keys['KeyD'] || keys['ArrowRight']) {
+               const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+               right.y = 0; right.normalize();
+               movement.add(right.multiplyScalar(speed));
+           }
+
+           const newPos = camera.position.clone().add(movement);
+
+           // Helper: check if a position is inside any building
+           function insideBuilding(pos) {
+               for (const b of buildings) {
+                   const halfW = b.width / 2 + 0.4;
+                   const halfD = b.depth / 2 + 0.4;
+                   if (pos.x > b.x - halfW && pos.x < b.x + halfW &&
+                       pos.z > b.z - halfD && pos.z < b.z + halfD) return true;
+               }
+               return false;
+           }
+
+           // Wall sliding: try full move, then X-only, then Z-only
+           if (!insideBuilding(newPos) && !insideTree(newPos)) {
+               camera.position.add(movement);
+           } else {
+               const slideX = camera.position.clone();
+               slideX.x += movement.x;
+               if (!insideBuilding(slideX) && !insideTree(slideX)) {
+                   camera.position.x += movement.x;
+               } else {
+                   const slideZ = camera.position.clone();
+                   slideZ.z += movement.z;
+                   if (!insideBuilding(slideZ) && !insideTree(slideZ)) {
+                       camera.position.z += movement.z;
+                   }
+               }
+           }
+
+           function insideTree(pos) {
+               for (const tree of trees) {
+                   const dx = pos.x - tree.position.x;
+                   const dz = pos.z - tree.position.z;
+                   if (Math.sqrt(dx*dx + dz*dz) < 1) return true;
+               }
+               return false;
+           }
+
+           camera.position.x = Math.max(-70, Math.min(70, camera.position.x));
+           camera.position.z = Math.max(-70, Math.min(70, camera.position.z));
+
+           // Jump / Fly physics
+           const onGround = camera.position.y <= CONFIG.PLAYER_HEIGHT + 0.05;
+
+           // Jetpack thrust: held button consumes fuel and pushes up
+           if (gameState.flyUnlocked && gameState.flyHeld && gameState.flyFuel > 0) {
+               gameState.jumpVy = Math.min(gameState.jumpVy + 0.025, 0.25);
+               gameState.flyFuel = Math.max(0, gameState.flyFuel - 0.0045);
+               updateFuelBar();
+           }
+
+           // Apply vertical velocity + gravity
+           if (gameState.jumpVy > 0 || camera.position.y > CONFIG.PLAYER_HEIGHT) {
+               camera.position.y += gameState.jumpVy;
+               gameState.jumpVy -= 0.013; // gravity
+               if (camera.position.y <= CONFIG.PLAYER_HEIGHT) {
+                   camera.position.y = CONFIG.PLAYER_HEIGHT;
+                   gameState.jumpVy = 0;
+               }
+           }
+
+           // Jump impulse (only while jetpack locked, must be on ground)
+           if (!gameState.flyUnlocked && gameState.jumpRequested && onGround && gameState.jumpVy === 0) {
+               gameState.jumpVy = 0.20;
+               gameState.jumpRequested = false;
+           }
+
+           checkDoorTeleport(camera.position);
+       }
+
+       // ==========================================
+       // KEYBOARD CONTROLS (Desktop)
+       // ==========================================
+       const keys = {};
+       document.addEventListener('keydown', (e) => {
+           keys[e.code] = true;
+           if (e.code === 'KeyR') reload();
+           if (e.code === 'KeyQ' || e.code === 'Tab') { e.preventDefault(); cycleWeapon(); }
+           if (e.code === 'Space') {
+               e.preventDefault();
+               if (gameState.flyUnlocked) { gameState.flyHeld = true; }
+               else { gameState.jumpRequested = true; }
+           }
+       });
+       document.addEventListener('keyup', (e) => {
+           keys[e.code] = false;
+           if (e.code === 'Space') gameState.flyHeld = false;
+       });
+
+       // Pointer lock for desktop mouse look
+       canvas.addEventListener('click', () => {
+           if (!document.pointerLockElement) canvas.requestPointerLock();
+       });
+       document.addEventListener('mousemove', (e) => {
+           if (document.pointerLockElement === canvas) {
+               lookState.rotationY -= e.movementX * CONFIG.LOOK_SENSITIVITY_X;
+               lookState.rotationX -= e.movementY * CONFIG.LOOK_SENSITIVITY_Y;
+               lookState.rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, lookState.rotationX));
+               camera.rotation.order = 'YXZ';
+               camera.rotation.y = lookState.rotationY;
+               camera.rotation.x = lookState.rotationX;
+           }
+       });
+       document.addEventListener('mousedown', (e) => {
+           if (document.pointerLockElement === canvas && e.button === 0) isShooting = true;
+       });
+       document.addEventListener('mouseup', (e) => {
+           if (e.button === 0) isShooting = false;
+       });
+
+       // ==========================================
+       // LOOK CONTROLS
+       // ==========================================
+       let lookState = {
+           isLooking: false,
+           lastX: 0,
+           lastY: 0,
+           rotationX: 0,
+           rotationY: 0,
+           touchId: null
+       };
+
+       canvas.addEventListener('touchstart', (e) => {
+           for (let i = 0; i < e.changedTouches.length; i++) {
+               const touch = e.changedTouches[i];
+               if (touch.target === canvas) {
+                   lookState.isLooking = true;
+                   lookState.touchId = touch.identifier;
+                   lookState.lastX = touch.clientX;
+                   lookState.lastY = touch.clientY;
+                   break;
+               }
+           }
+       }, { passive: true });
+
+       canvas.addEventListener('touchmove', (e) => {
+           if (!lookState.isLooking) return;
+           
+           let touch = null;
+           for (let i = 0; i < e.touches.length; i++) {
+               if (e.touches[i].identifier === lookState.touchId) {
+                   touch = e.touches[i];
+                   break;
+               }
+           }
+           if (!touch) return;
+
+           const deltaX = touch.clientX - lookState.lastX;
+           const deltaY = touch.clientY - lookState.lastY;
+
+           lookState.rotationY -= deltaX * CONFIG.LOOK_SENSITIVITY_X;
+           lookState.rotationX -= deltaY * CONFIG.LOOK_SENSITIVITY_Y;
+           lookState.rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, lookState.rotationX));
+
+           camera.rotation.order = 'YXZ';
+           camera.rotation.y = lookState.rotationY;
+           camera.rotation.x = lookState.rotationX;
+
+           lookState.lastX = touch.clientX;
+           lookState.lastY = touch.clientY;
+       }, { passive: true });
+
+       canvas.addEventListener('touchend', (e) => {
+           for (let i = 0; i < e.changedTouches.length; i++) {
+               if (e.changedTouches[i].identifier === lookState.touchId) {
+                   lookState.isLooking = false;
+                   lookState.touchId = null;
+                   break;
+               }
+           }
+       }, { passive: true });
+
+       // ==========================================
+       // GAME INITIALIZATION
+       // ==========================================
+       async function initGame() {
+           console.log('=== ZOMBIE SURVIVAL 3D - LABUBU EDITION ===');
+           console.log('Loading assets...');
+           
+           await loadLabubuModel();
+           
+           document.getElementById('loading-screen').style.display = 'none';
+           
+           gameState.gameStarted = true;
+           spawnZombies(gameState.zombiesThisWave);
+           
+           animate();
+           
+           const pickupHint = document.getElementById('pickup-hint');
+           pickupHint.style.display = 'block';
+           setTimeout(() => pickupHint.style.display = 'none', 5000);
+
+           const weaponHint = document.getElementById('weapon-hint');
+           setTimeout(() => weaponHint.style.display = 'none', 8000);
+       }
+
+       // ==========================================
+       // MINIMAP
+       // ==========================================
+       const minimapCanvas = document.getElementById('minimapCanvas');
+       const minimapCtx = minimapCanvas.getContext('2d');
+       const MAP_SIZE = 100;
+       const WORLD_SIZE = 140;
+       const MAP_SCALE = MAP_SIZE / WORLD_SIZE;
+
+       function updateMinimap() {
+           minimapCtx.clearRect(0, 0, MAP_SIZE, MAP_SIZE);
+           
+           // Background
+           minimapCtx.fillStyle = 'rgba(0,20,0,0.7)';
+           minimapCtx.beginPath();
+           minimapCtx.arc(MAP_SIZE/2, MAP_SIZE/2, MAP_SIZE/2, 0, Math.PI * 2);
+           minimapCtx.fill();
+
+           // Buildings
+           minimapCtx.fillStyle = 'rgba(100,100,100,0.8)';
+           for (const b of buildings) {
+               const mx = (b.x + WORLD_SIZE/2) * MAP_SCALE - b.width * MAP_SCALE / 2;
+               const mz = (b.z + WORLD_SIZE/2) * MAP_SCALE - b.depth * MAP_SCALE / 2;
+               minimapCtx.fillRect(mx, mz, b.width * MAP_SCALE, b.depth * MAP_SCALE);
+           }
+
+           // Zombies
+           for (const z of zombies) {
+               const mx = (z.group.position.x + WORLD_SIZE/2) * MAP_SCALE;
+               const mz = (z.group.position.z + WORLD_SIZE/2) * MAP_SCALE;
+               minimapCtx.fillStyle = z.isSuperBoss ? '#ff00ff' : (z.isBoss ? '#ff0000' : (z.isAgro ? '#ff6600' : '#00cc00'));
+               minimapCtx.beginPath();
+               minimapCtx.arc(mx, mz, z.isSuperBoss ? 5 : (z.isBoss ? 3 : 2), 0, Math.PI * 2);
+               minimapCtx.fill();
+           }
+
+           // Player
+           const px = (camera.position.x + WORLD_SIZE/2) * MAP_SCALE;
+           const pz = (camera.position.z + WORLD_SIZE/2) * MAP_SCALE;
+           minimapCtx.fillStyle = '#00ffff';
+           minimapCtx.beginPath();
+           minimapCtx.arc(px, pz, 3, 0, Math.PI * 2);
+           minimapCtx.fill();
+
+           // Player direction indicator
+           minimapCtx.strokeStyle = '#00ffff';
+           minimapCtx.lineWidth = 1.5;
+           minimapCtx.beginPath();
+           minimapCtx.moveTo(px, pz);
+           minimapCtx.lineTo(
+               px + Math.sin(camera.rotation.y) * -8,
+               pz + Math.cos(camera.rotation.y) * -8
+           );
+           minimapCtx.stroke();
+
+           // Drops
+           for (const d of drops) {
+               const mx = (d.mesh.position.x + WORLD_SIZE/2) * MAP_SCALE;
+               const mz = (d.mesh.position.z + WORLD_SIZE/2) * MAP_SCALE;
+               minimapCtx.fillStyle = d.type === 'health' ? '#00ff00' : (d.type === 'ammo' ? '#ffcc00' : '#ff00ff');
+               minimapCtx.beginPath();
+               minimapCtx.arc(mx, mz, 2, 0, Math.PI * 2);
+               minimapCtx.fill();
+           }
+
+           // Circle border
+           minimapCtx.strokeStyle = 'rgba(0,255,0,0.4)';
+           minimapCtx.lineWidth = 2;
+           minimapCtx.beginPath();
+           minimapCtx.arc(MAP_SIZE/2, MAP_SIZE/2, MAP_SIZE/2, 0, Math.PI * 2);
+           minimapCtx.stroke();
+       }
+
+       // FPS tracking
+       let fpsFrameCount = 0;
+       let fpsLastTime = performance.now();
+       let currentFps = 60;
+
+       // ==========================================
+       // PERK SHOP SYSTEM
+       // ==========================================
+       const PERK_DEFS = [
+           {
+               id: 'doublePickup',
+               icon: '🎒',
+               name: 'Scavenger',
+               desc: 'Double all med kit, armour & ammo pickups',
+               cost: 50,
+               duration: 90000   // 90 seconds
+           },
+           {
+               id: 'invisibility',
+               icon: '👻',
+               name: 'Ghost Potion',
+               desc: 'Labubus can\'t see you — they flock to the map centre',
+               cost: 100,
+               duration: 60000   // 60 seconds
+           },
+           {
+               id: 'adrenaline',
+               icon: '👟',
+               name: 'Adrenaline Boots',
+               desc: 'Move 30% faster',
+               cost: 200,
+               duration: 90000
+           },
+           {
+               id: 'hollowPoints',
+               icon: '🔥',
+               name: 'Hollow Points',
+               desc: 'All weapons deal 25% more damage',
+               cost: 350,
+               duration: 90000
+           },
+           {
+               id: 'doubleTap',
+               icon: '⚡',
+               name: 'Double Tap',
+               desc: 'Fire rate doubled on all weapons',
+               cost: 600,
+               duration: 60000
+           }
+       ];
+
+       const perks = {};
+       PERK_DEFS.forEach(p => {
+           perks[p.id] = { active: false, endsAt: 0, timerEl: null, badgeEl: null };
+       });
+
+       let shopOpen = false;
+
+       function openShop() {
+           shopOpen = true;
+           document.getElementById('shop-overlay').classList.add('open');
+           renderShop();
+       }
+
+       function closeShop() {
+           shopOpen = false;
+           lastTime = performance.now(); // prevent huge deltaTime spike after pause
+           document.getElementById('shop-overlay').classList.remove('open');
+       }
+
+       function renderShop() {
+           document.getElementById('shop-coins-display').textContent = gameState.coins;
+           const container = document.getElementById('shop-perks');
+           container.innerHTML = '';
+
+           PERK_DEFS.forEach(def => {
+               const state = perks[def.id];
+               const isActive = state.active;
+               const canAfford = gameState.coins >= def.cost;
+
+               const card = document.createElement('div');
+               card.className = 'perk-card' +
+                   (isActive ? ' active-perk' : (canAfford ? ' affordable' : ' cant-afford'));
+
+               const remaining = isActive ? Math.ceil((state.endsAt - Date.now()) / 1000) : 0;
+
+               card.innerHTML = `
+                   <div class="perk-left">
+                       <div class="perk-icon">${def.icon}</div>
+                       <div class="perk-info">
+                           <div class="perk-name">${def.name}</div>
+                           <div class="perk-desc">${def.desc}</div>
+                           <div class="perk-timer" style="display:${isActive ? 'block' : 'none'}">
+                               ⏱ ${remaining}s remaining
+                           </div>
+                       </div>
+                   </div>
+                   <div class="perk-cost ${isActive ? 'active-cost' : ''}">
+                       ${isActive ? '✅ ACTIVE' : '💰 ' + def.cost}
+                   </div>`;
+
+               if (!isActive && canAfford) {
+                   card.addEventListener('click', () => buyPerk(def.id));
+                   card.addEventListener('touchstart', (e) => { e.preventDefault(); buyPerk(def.id); }, { passive: false });
+               }
+
+               container.appendChild(card);
+           });
+       }
+
+       function buyPerk(id) {
+           const def = PERK_DEFS.find(p => p.id === id);
+           if (!def || gameState.coins < def.cost) return;
+           if (perks[id].active) return;
+
+           gameState.coins -= def.cost;
+           activatePerk(id, def);
+           renderShop();
+       }
+
+       function activatePerk(id, def) {
+           const state = perks[id];
+           // Clear any existing timer
+           if (state._timeout) clearTimeout(state._timeout);
+           if (state._interval) clearInterval(state._interval);
+           if (state.badgeEl) state.badgeEl.remove();
+
+           state.active = true;
+           state.endsAt = Date.now() + def.duration;
+
+           // HUD badge
+           const hud = document.getElementById('active-perks-hud');
+           const badge = document.createElement('div');
+           badge.className = 'hud-perk-badge';
+           badge.id = 'perk-badge-' + id;
+           hud.appendChild(badge);
+           state.badgeEl = badge;
+
+           // Notification
+           showNotification(`${def.icon} ${def.name.toUpperCase()} ACTIVE!`, '#00ffcc');
+           if (id === 'invisibility') {
+               showNotification('👻 YOU ARE INVISIBLE!', '#cc88ff');
+           }
+
+           // Countdown tick
+           function tick() {
+               const left = Math.ceil((state.endsAt - Date.now()) / 1000);
+               if (state.badgeEl) state.badgeEl.textContent = `${def.icon} ${left}s`;
+               if (shopOpen) renderShop();
+           }
+           tick();
+           state._interval = setInterval(tick, 500);
+
+           // Expiry
+           state._timeout = setTimeout(() => {
+               state.active = false;
+               clearInterval(state._interval);
+               if (state.badgeEl) { state.badgeEl.remove(); state.badgeEl = null; }
+               showNotification(`${def.icon} ${def.name} EXPIRED`, '#ff6644');
+               if (shopOpen) renderShop();
+           }, def.duration);
+       }
+
+       // Speed multiplier accessed in updatePlayer
+       function getSpeedMultiplier() {
+           return perks.adrenaline.active ? 1.3 : 1.0;
+       }
+
+       document.getElementById('shop-button').addEventListener('click', openShop);
+       document.getElementById('shop-button').addEventListener('touchstart', (e) => {
+           e.preventDefault(); e.stopPropagation(); openShop();
+       }, { passive: false });
+
+       document.getElementById('shop-close').addEventListener('click', closeShop);
+       document.getElementById('shop-close').addEventListener('touchstart', (e) => {
+           e.preventDefault(); closeShop();
+       }, { passive: false });
+
+       // Jump / Fly button
+       const jumpBtn = document.getElementById('jump-button');
+       const onBtnStart = (e) => {
+           e.preventDefault();
+           e.stopPropagation();
+           if (gameState.flyUnlocked) {
+               gameState.flyHeld = true;
+           } else {
+               gameState.jumpRequested = true;
+           }
+       };
+       const onBtnEnd = (e) => {
+           e.preventDefault();
+           e.stopPropagation();
+           gameState.flyHeld = false;
+       };
+       jumpBtn.addEventListener('touchstart', onBtnStart, { passive: false });
+       jumpBtn.addEventListener('touchend',   onBtnEnd,   { passive: false });
+       jumpBtn.addEventListener('mousedown',  onBtnStart);
+       jumpBtn.addEventListener('mouseup',    onBtnEnd);
+
+       // ==========================================
+       // AUTO-AIM SYSTEM (Lock-On)
+       // ==========================================
+       const autoAimState = {
+           enabled: false,
+           lockedZombie: null,
+           SMOOTH: 0.18
+       };
+
+       // Ring CSS is 80px wide = 40px radius — acquisition must match this exactly
+       const AUTO_AIM_RING_RADIUS_PX = 40;
+
+       const autoAimBtn = document.getElementById('auto-aim-button');
+       const autoAimRing = document.getElementById('auto-aim-ring');
+
+       autoAimBtn.addEventListener('click', () => {
+           autoAimState.enabled = !autoAimState.enabled;
+           autoAimState.lockedZombie = null;
+           autoAimBtn.classList.toggle('active', autoAimState.enabled);
+           autoAimRing.style.display = autoAimState.enabled ? 'block' : 'none';
+           autoAimRing.classList.remove('locked');
+       });
+
+       // Aim height scaled for boss (2.5x bigger) vs regular labubu
+       function aimHeight(zombie) {
+           return zombie.isSuperBoss ? 3.0 : (zombie.isBoss ? 1.5 : 0.7);
+       }
+
+       // Pixel distance from screen centre to zombie's torso projection
+       function screenDistToZombie(zombie) {
+           const zPos = zombie.group.position.clone();
+           zPos.y += aimHeight(zombie);
+           const projected = zPos.clone().project(camera);
+           const px = projected.x * (window.innerWidth / 2);
+           const py = projected.y * (window.innerHeight / 2);
+           return Math.sqrt(px * px + py * py);
+       }
+
+       // Returns true if a wall blocks line-of-sight from camera to a zombie's torso
+       function wallBlocksLOS(zombie) {
+           const zPos = zombie.group.position.clone();
+           zPos.y += aimHeight(zombie);
+           const dir = zPos.clone().sub(camera.position);
+           const dist = dir.length();
+           dir.normalize();
+           const ray = new THREE.Raycaster(camera.position.clone(), dir, 0, dist);
+           const wallMeshes = buildings.map(b => b.mesh);
+           const hits = ray.intersectObjects(wallMeshes, true);
+           return hits.length > 0;
+       }
+
+       // Only find a zombie whose torso projects inside the crosshair ring — no global fallback
+       function findZombieInCrosshair() {
+           let best = null;
+           let bestDist = Infinity;
+           const camDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+
+           for (const z of zombies) {
+               if (z.health <= 0) continue;
+
+               const zPos = z.group.position.clone();
+               zPos.y += aimHeight(z);
+
+               // Must be in front of camera
+               if (zPos.clone().sub(camera.position).dot(camDir) <= 0) continue;
+
+               // Must not be behind clip plane
+               const projected = zPos.clone().project(camera);
+               if (projected.z > 1) continue;
+
+               // Must be visible — no wall in the way
+               if (wallBlocksLOS(z)) continue;
+
+               const sDist = screenDistToZombie(z);
+               if (sDist <= AUTO_AIM_RING_RADIUS_PX && sDist < bestDist) {
+                   bestDist = sDist;
+                   best = z;
+               }
+           }
+           return best;
+       }
+
+       function updateAutoAim() {
+           if (!autoAimState.enabled || !gameState.gameStarted || gameState.isGameOver) return;
+
+           // Clear lock if target died or walked behind a wall
+           if (autoAimState.lockedZombie) {
+               if (autoAimState.lockedZombie.health <= 0 || wallBlocksLOS(autoAimState.lockedZombie)) {
+                   autoAimState.lockedZombie = null;
+                   autoAimRing.classList.remove('locked');
+               }
+           }
+
+           // Try to acquire — ONLY if a labubu is inside the crosshair ring
+           if (!autoAimState.lockedZombie) {
+               autoAimState.lockedZombie = findZombieInCrosshair();
+           }
+
+           if (!autoAimState.lockedZombie) {
+               autoAimRing.classList.remove('locked');
+               return;
+           }
+
+           autoAimRing.classList.add('locked');
+
+           // Steer camera toward locked target's torso
+           const zPos = autoAimState.lockedZombie.group.position.clone();
+           zPos.y += aimHeight(autoAimState.lockedZombie);
+           const delta = zPos.clone().sub(camera.position);
+
+           const targetYaw = Math.atan2(-delta.x, -delta.z);
+           const horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
+           const targetPitch = Math.atan2(delta.y, horizontal);
+
+           let dyaw = targetYaw - lookState.rotationY;
+           while (dyaw > Math.PI) dyaw -= Math.PI * 2;
+           while (dyaw < -Math.PI) dyaw += Math.PI * 2;
+
+           lookState.rotationY += dyaw * autoAimState.SMOOTH;
+           lookState.rotationX += (targetPitch - lookState.rotationX) * autoAimState.SMOOTH;
+           lookState.rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, lookState.rotationX));
+
+           camera.rotation.order = 'YXZ';
+           camera.rotation.y = lookState.rotationY;
+           camera.rotation.x = lookState.rotationX;
+       }
+
+       // ==========================================
+       // GAME LOOP
+       // ==========================================
+       let lastTime = performance.now();
+
+       function animate() {
+           if (gameState.isGameOver) {
+               renderer.render(scene, camera);
+               return;
+           }
+
+           requestAnimationFrame(animate);
+
+           // Pause all simulation while shop is open, but keep rendering
+           if (shopOpen) {
+               renderer.render(scene, camera);
+               return;
+           }
+
+           const currentTime = performance.now();
+           const rawDelta = currentTime - lastTime;
+           const deltaTime = Math.min(rawDelta, 50); // Cap at 50ms to prevent spiral of death
+           lastTime = currentTime;
+
+           updatePlayer(deltaTime);
+
+           updateAutoAim();
+
+           if (isShooting) {
+               shoot();
+           }
+
+           const playerPos = camera.position.clone();
+           zombies.forEach(zombie => zombie.update(playerPos, deltaTime));
+
+           projectiles.forEach(proj => proj.update(deltaTime));
+
+           drops.forEach(drop => {
+               drop.update(currentTime);
+               drop.checkPickup(playerPos);
+           });
+
+           // Update minimap every 3 frames for performance
+           if (fpsFrameCount % 3 === 0) {
+               updateMinimap();
+           }
+
+           // Day/night cycle
+           updateDayNight(deltaTime);
+
+           // FPS counter
+           fpsFrameCount++;
+           if (currentTime - fpsLastTime > 500) {
+               currentFps = Math.round(fpsFrameCount / ((currentTime - fpsLastTime) / 1000));
+               fpsFrameCount = 0;
+               fpsLastTime = currentTime;
+               document.getElementById('fps-counter').textContent = currentFps + ' FPS';
+           }
+
+           renderer.render(scene, camera);
+       }
+
+       window.addEventListener('resize', () => {
+           camera.aspect = window.innerWidth / window.innerHeight;
+           camera.updateProjectionMatrix();
+           renderer.setSize(window.innerWidth, window.innerHeight);
+           updateJoystickCenter();
+       });
+
+       document.body.addEventListener('touchmove', (e) => {
+           if (e.target === canvas || e.target === document.body) {
+               e.preventDefault();
+           }
+       }, { passive: false });
+
+       updateUI();
+       updateHealthBar();
+       updateWeaponCycleButton();
+
+       // ==========================================
+       // DAY/NIGHT CYCLE
+       // ==========================================
+       let dayNightTime = 0;
+       const DAY_CYCLE_SPEED = 0.00005;
+
+       function updateDayNight(deltaTime) {
+           dayNightTime += deltaTime * DAY_CYCLE_SPEED;
+           const dayFactor = (Math.sin(dayNightTime) + 1) / 2; // 0=night, 1=day
+           
+           // Sky color
+           const dayColor = new THREE.Color(0x87CEEB);
+           const nightColor = new THREE.Color(0x050515);
+           scene.background = dayColor.clone().lerp(nightColor, 1 - dayFactor);
+           scene.fog.color.copy(scene.background);
+           
+           // Light intensity
+           sunLight.intensity = 0.2 + dayFactor * 0.8;
+           ambientLight.intensity = 0.2 + dayFactor * 0.5;
+           hemiLight.intensity = 0.1 + dayFactor * 0.5;
+           
+           // Night zombies are a bit faster
+           if (dayFactor < 0.3 && !gameState.isNight) {
+               gameState.isNight = true;
+               showNotification('🌙 NIGHT FALLS - ZOMBIES SPEED UP!', '#8866ff');
+           } else if (dayFactor >= 0.3 && gameState.isNight) {
+               gameState.isNight = false;
+               showNotification('☀️ DAWN BREAKS!', '#ffcc44');
+           }
+       }
+       
+       gameState.isNight = false;
+       
+       initGame();
+   </script>
+</body>
+</html>
