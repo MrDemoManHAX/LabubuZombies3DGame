@@ -1042,16 +1042,12 @@
                        <button class="mod-apply-btn" id="mod-health-apply">SET</button>
                    </div>
                </div>
-               <div class="mod-row" id="mod-row-maxammo">
+               <div class="mod-row" id="mod-row-unlimitedammo">
                    <div>
-                       <div class="mod-label">Set Max Reserve Ammo</div>
-                       <div class="mod-desc">Sets total ammo for current weapon</div>
-                       <div class="mod-status-text" id="mod-maxammo-status">✔ Applied!</div>
+                       <div class="mod-label">Unlimited Ammo</div>
+                       <div class="mod-desc">Ammo never runs out on any weapon</div>
                    </div>
-                   <div class="mod-input-group">
-                       <input class="mod-input" id="mod-maxammo-input" type="number" min="0" max="99999" value="999">
-                       <button class="mod-apply-btn" id="mod-maxammo-apply">SET</button>
-                   </div>
+                   <div class="mod-toggle" id="mod-unlimitedammo-toggle"></div>
                </div>
                <div class="mod-row" id="mod-row-speed">
                    <div>
@@ -1069,12 +1065,51 @@
            <!-- TOGGLES -->
            <div class="mod-section">
                <div class="mod-section-title">🔀 Toggles</div>
-               <div class="mod-row" id="mod-row-allperks">
+
+               <!-- Perks dropdown -->
+               <div class="mod-row" id="mod-row-perks-header" style="cursor:pointer;">
                    <div>
-                       <div class="mod-label">Activate All Perks</div>
-                       <div class="mod-desc">Enables all shop perks instantly (no cost)</div>
+                       <div class="mod-label">🎯 Perks</div>
+                       <div class="mod-desc">Toggle individual perks on/off</div>
                    </div>
-                   <div class="mod-toggle" id="mod-allperks-toggle"></div>
+                   <div style="color:#ff00ff;font-size:18px;" id="mod-perks-arrow">▼</div>
+               </div>
+               <div id="mod-perks-dropdown" style="display:none; width:92%; max-width:420px; margin: -4px auto 8px auto;">
+                   <div class="mod-row" id="mod-row-perk-doublePickup">
+                       <div>
+                           <div class="mod-label">🎒 Scavenger</div>
+                           <div class="mod-desc">Double pickups + 2x coins</div>
+                       </div>
+                       <div class="mod-toggle" id="mod-perk-doublePickup-toggle"></div>
+                   </div>
+                   <div class="mod-row" id="mod-row-perk-invisibility">
+                       <div>
+                           <div class="mod-label">🌀 Activate Portal</div>
+                           <div class="mod-desc">Zombies flock to map centre</div>
+                       </div>
+                       <div class="mod-toggle" id="mod-perk-invisibility-toggle"></div>
+                   </div>
+                   <div class="mod-row" id="mod-row-perk-adrenaline">
+                       <div>
+                           <div class="mod-label">👟 Adrenaline Boots</div>
+                           <div class="mod-desc">Move 30% faster</div>
+                       </div>
+                       <div class="mod-toggle" id="mod-perk-adrenaline-toggle"></div>
+                   </div>
+                   <div class="mod-row" id="mod-row-perk-hollowPoints">
+                       <div>
+                           <div class="mod-label">🔥 Hollow Points</div>
+                           <div class="mod-desc">25% more weapon damage</div>
+                       </div>
+                       <div class="mod-toggle" id="mod-perk-hollowPoints-toggle"></div>
+                   </div>
+                   <div class="mod-row" id="mod-row-perk-doubleTap">
+                       <div>
+                           <div class="mod-label">⚡ Double Tap</div>
+                           <div class="mod-desc">Fire rate doubled</div>
+                       </div>
+                       <div class="mod-toggle" id="mod-perk-doubleTap-toggle"></div>
+                   </div>
                </div>
                <div class="mod-row" id="mod-row-godmode">
                    <div>
@@ -3453,13 +3488,13 @@
            const currentWeapon = getCurrentWeapon();
            const weaponDef = getCurrentWeaponDef();
            
-           if (gameState.isReloading || currentWeapon.ammo <= 0 || gameState.isGameOver) return;
+           if (gameState.isReloading || (!modState.unlimitedAmmo && currentWeapon.ammo <= 0) || gameState.isGameOver) return;
 
            const now = Date.now();
            if (now - lastShootTime < weaponDef.fireRate / (perks.doubleTap.active ? 2 : 1)) return;
            lastShootTime = now;
 
-           currentWeapon.ammo--;
+           if (!modState.unlimitedAmmo) currentWeapon.ammo--;
            updateUI();
 
            muzzleFlash.color.setHex(weaponDef.name === 'FREEZE' ? 0x00ffff : (weaponDef.explosionColor || 0xffaa00));
@@ -3519,7 +3554,7 @@
                }
            }
 
-           if (currentWeapon.ammo === 0 && currentWeapon.totalAmmo > 0) {
+           if (!modState.unlimitedAmmo && currentWeapon.ammo === 0 && currentWeapon.totalAmmo > 0) {
                reload();
            }
        }
@@ -3535,6 +3570,7 @@
            const currentWeapon = getCurrentWeapon();
            const weaponDef = getCurrentWeaponDef();
            
+           if (modState.unlimitedAmmo) return;
            if (gameState.isReloading || currentWeapon.totalAmmo === 0 || currentWeapon.ammo === weaponDef.clipSize) return;
 
            gameState.isReloading = true;
@@ -4542,14 +4578,13 @@
            flashStatus('mod-health-status');
        });
 
-       // Max ammo
-       document.getElementById('mod-maxammo-apply').addEventListener('click', () => {
-           const val = parseInt(document.getElementById('mod-maxammo-input').value);
-           if (isNaN(val) || val < 0) return;
-           // Set totalAmmo for ALL weapons
-           gameState.weapons.forEach(w => { w.totalAmmo = val; });
-           updateUI();
-           flashStatus('mod-maxammo-status');
+       // Unlimited ammo toggle
+       modState.unlimitedAmmo = false;
+       document.getElementById('mod-unlimitedammo-toggle').addEventListener('click', () => {
+           modState.unlimitedAmmo = !modState.unlimitedAmmo;
+           syncToggle('mod-unlimitedammo-toggle', modState.unlimitedAmmo);
+           document.getElementById('mod-row-unlimitedammo').classList.toggle('active-mod', modState.unlimitedAmmo);
+           showNotification(modState.unlimitedAmmo ? '∞ UNLIMITED AMMO ON' : '🔫 UNLIMITED AMMO OFF', '#ff00ff');
        });
 
        // Player speed
@@ -4568,36 +4603,59 @@
            showNotification(modState.godMode ? '😇 GOD MODE ON' : '💀 GOD MODE OFF', '#ff00ff');
        });
 
-       // All perks toggle
-       document.getElementById('mod-allperks-toggle').addEventListener('click', () => {
-           modState.allPerksActive = !modState.allPerksActive;
-           syncToggle('mod-allperks-toggle', modState.allPerksActive);
-           document.getElementById('mod-row-allperks').classList.toggle('active-mod', modState.allPerksActive);
-
-           if (modState.allPerksActive) {
-               // Activate every perk for a very long duration (24 hrs)
-               PERK_DEFS.forEach(def => {
-                   if (!perks[def.id].active) {
-                       const fakeInfiniteDef = Object.assign({}, def, { duration: 86400000 });
-                       activatePerk(def.id, fakeInfiniteDef);
-                   }
-               });
-               showNotification('⭐ ALL PERKS ACTIVATED!', '#ff00ff');
-           } else {
-               // Deactivate all perks immediately
-               PERK_DEFS.forEach(def => {
-                   const state = perks[def.id];
-                   if (state.active) {
-                       state.active = false;
-                       if (state._timeout) clearTimeout(state._timeout);
-                       if (state._interval) clearInterval(state._interval);
-                       if (state.badgeEl) { state.badgeEl.remove(); state.badgeEl = null; }
-                   }
-               });
-               if (window._portalHoop) window._portalHoop.visible = false;
-               showNotification('❌ ALL PERKS DEACTIVATED', '#ff6644');
-           }
+       // Perks dropdown toggle
+       document.getElementById('mod-row-perks-header').addEventListener('click', () => {
+           const dd = document.getElementById('mod-perks-dropdown');
+           const arrow = document.getElementById('mod-perks-arrow');
+           const open = dd.style.display === 'block';
+           dd.style.display = open ? 'none' : 'block';
+           arrow.textContent = open ? '▼' : '▲';
        });
+       document.getElementById('mod-row-perks-header').addEventListener('touchstart', (e) => {
+           e.preventDefault();
+           const dd = document.getElementById('mod-perks-dropdown');
+           const arrow = document.getElementById('mod-perks-arrow');
+           const open = dd.style.display === 'block';
+           dd.style.display = open ? 'none' : 'block';
+           arrow.textContent = open ? '▼' : '▲';
+       }, { passive: false });
+
+       // Individual perk toggles
+       ['doublePickup', 'invisibility', 'adrenaline', 'hollowPoints', 'doubleTap'].forEach(perkId => {
+           const toggleEl = document.getElementById('mod-perk-' + perkId + '-toggle');
+           const rowEl = document.getElementById('mod-row-perk-' + perkId);
+           toggleEl.addEventListener('click', () => {
+               const isActive = perks[perkId].active;
+               if (!isActive) {
+                   const def = PERK_DEFS.find(p => p.id === perkId);
+                   const infiniteDef = Object.assign({}, def, { duration: 86400000 });
+                   activatePerk(perkId, infiniteDef);
+               } else {
+                   const state = perks[perkId];
+                   state.active = false;
+                   if (state._timeout) clearTimeout(state._timeout);
+                   if (state._interval) clearInterval(state._interval);
+                   if (state.badgeEl) { state.badgeEl.remove(); state.badgeEl = null; }
+                   if (perkId === 'invisibility' && window._portalHoop) window._portalHoop.visible = false;
+                   showNotification('❌ ' + PERK_DEFS.find(p => p.id === perkId).name + ' OFF', '#ff6644');
+               }
+               syncToggle('mod-perk-' + perkId + '-toggle', !isActive);
+               rowEl.classList.toggle('active-mod', !isActive);
+           });
+       });
+
+       // Sync perk toggles when mod menu opens (so they reflect current state)
+       const _origOpenModMenu = openModMenu;
+       openModMenu = function() {
+           _origOpenModMenu();
+           ['doublePickup', 'invisibility', 'adrenaline', 'hollowPoints', 'doubleTap'].forEach(perkId => {
+               const active = perks[perkId].active;
+               syncToggle('mod-perk-' + perkId + '-toggle', active);
+               document.getElementById('mod-row-perk-' + perkId).classList.toggle('active-mod', active);
+           });
+           syncToggle('mod-unlimitedammo-toggle', modState.unlimitedAmmo);
+           document.getElementById('mod-row-unlimitedammo').classList.toggle('active-mod', modState.unlimitedAmmo);
+       };
 
        // Open / close buttons
        document.getElementById('mod-menu-button').addEventListener('click', openModMenu);
