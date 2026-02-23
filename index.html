@@ -25,6 +25,34 @@
            height: 100vh;
        }
 
+       /* =============================================
+          RESPONSIVE HUD — viewport-relative layout
+          All buttons use CSS custom properties so
+          nothing overlaps at any screen ratio.
+          ============================================= */
+       :root {
+           /* Button sizes scale with the smaller screen dimension */
+           --btn-lg: min(90px, 13vw);   /* FIRE button */
+           --btn-md: min(60px, 9vw);    /* secondary buttons */
+           --btn-sm: min(50px, 7.5vw);  /* small extras */
+
+           /* Right-column buttons anchor from right edge */
+           --r-pad: max(16px, 2.5vw);
+
+           /* Bottom row baseline */
+           --b-pad: max(16px, 2.5vh);
+
+           /* Gap between stacked buttons */
+           --gap: min(12px, 1.8vh);
+
+           /* Left joystick area */
+           --joy-size: min(120px, 18vw);
+           --joy-stick-size: calc(var(--joy-size) * 0.42);
+
+           /* Stats panel font */
+           --stats-font: clamp(9px, 1.5vw, 13px);
+       }
+
        #hud {
            position: absolute;
            top: 0;
@@ -34,16 +62,19 @@
            pointer-events: none;
        }
 
+       /* ---- TOP-LEFT: stats panel ---- */
        #stats {
            position: absolute;
-           top: 10px;
-           left: 10px;
+           top: max(8px, 1vh);
+           left: max(8px, 1vw);
            color: #fff;
            text-shadow: 2px 2px 4px #000;
-           font-size: 11px;
+           font-size: var(--stats-font);
            z-index: 10;
            opacity: 0.55;
            transition: opacity 0.3s;
+           /* prevent overlap with top-centre buttons */
+           max-width: calc(50% - 80px);
        }
 
        #stats:hover, #stats:active {
@@ -56,16 +87,16 @@
            margin: 2px 0;
            border-radius: 4px;
            border: 1px solid #444;
-           min-width: 130px;
+           min-width: min(130px, 20vw);
        }
 
        #health-bar { border-color: #c00; }
-       #armor-bar { border-color: #00f; }
-       #ammo-bar { border-color: #fc0; }
+       #armor-bar  { border-color: #00f; }
+       #ammo-bar   { border-color: #fc0; }
 
        .bar-container {
            width: 100%;
-           height: 8px;
+           height: clamp(5px, 1vh, 9px);
            background: #333;
            border-radius: 3px;
            margin-top: 2px;
@@ -93,16 +124,18 @@
            box-shadow: 0 0 10px rgba(255,200,0,0.5);
        }
 
+       /* ---- TOP-RIGHT: wave info — clear of minimap ---- */
        #wave-info {
            position: absolute;
-           top: 120px;
-           right: 10px;
+           top: calc(max(8px,1vh) + min(100px,14vw) + 8px); /* below minimap */
+           right: max(8px, 1vw);
            text-align: right;
            color: #fff;
-           font-size: 20px;
+           font-size: clamp(14px, 2.5vw, 22px);
            text-shadow: 3px 3px 6px #000;
        }
 
+       /* ---- CROSSHAIR (centred) ---- */
        #crosshair {
            position: absolute;
            top: 50%;
@@ -120,27 +153,24 @@
        }
 
        #crosshair::before {
-           width: 20px;
-           height: 2px;
-           top: 50%;
-           left: 50%;
+           width: 20px; height: 2px;
+           top: 50%; left: 50%;
            transform: translate(-50%, -50%);
        }
 
        #crosshair::after {
-           width: 2px;
-           height: 20px;
-           top: 50%;
-           left: 50%;
+           width: 2px; height: 20px;
+           top: 50%; left: 50%;
            transform: translate(-50%, -50%);
        }
 
+       /* ---- BOTTOM-LEFT: joystick ---- */
        #joystick-area {
            position: absolute;
-           bottom: 30px;
-           left: 20px;
-           width: 120px;
-           height: 120px;
+           bottom: var(--b-pad);
+           left: var(--r-pad);
+           width: var(--joy-size);
+           height: var(--joy-size);
            pointer-events: all;
        }
 
@@ -154,22 +184,33 @@
 
        #joystick-stick {
            position: absolute;
-           width: 50px;
-           height: 50px;
+           width: var(--joy-stick-size);
+           height: var(--joy-stick-size);
            background: radial-gradient(circle, rgba(200,200,200,0.8), rgba(150,150,150,0.8));
            border-radius: 50%;
-           top: 50%;
-           left: 50%;
+           top: 50%; left: 50%;
            transform: translate(-50%, -50%);
            border: 3px solid rgba(255,255,255,0.5);
        }
 
+       /* =============================================
+          RIGHT-SIDE BUTTON COLUMN
+          Stack from bottom to top:
+            row0 (bottom): FIRE + RELOAD side by side
+            row1: JUMP (left of FIRE column) + WEAPON (right)
+            row2: WEAPON HINT
+            row3: SHOP
+            row4: COINS
+            row5: ACTIVE PERKS HUD
+          ============================================= */
+
+       /* FIRE — bottom-right anchor */
        #shoot-button {
            position: absolute;
-           bottom: 40px;
-           right: 30px;
-           width: 90px;
-           height: 90px;
+           bottom: var(--b-pad);
+           right: var(--r-pad);
+           width: var(--btn-lg);
+           height: var(--btn-lg);
            background: radial-gradient(circle, rgba(255,0,0,0.7), rgba(200,0,0,0.7));
            border-radius: 50%;
            border: 4px solid rgba(255,255,255,0.5);
@@ -177,21 +218,23 @@
            display: flex;
            align-items: center;
            justify-content: center;
-           font-size: 12px;
+           font-size: clamp(9px, 1.5vw, 13px);
            color: #fff;
            font-weight: bold;
            text-shadow: 2px 2px 4px #000;
            box-shadow: 0 4px 15px rgba(255,0,0,0.5);
            cursor: pointer;
            user-select: none;
+           z-index: 20;
        }
 
+       /* RELOAD — sits to the left of FIRE, same bottom row */
        #reload-button {
            position: absolute;
-           bottom: 40px;
-           right: 140px;
-           width: 60px;
-           height: 60px;
+           bottom: calc(var(--b-pad) + (var(--btn-lg) - var(--btn-md)) / 2);
+           right: calc(var(--r-pad) + var(--btn-lg) + var(--gap));
+           width: var(--btn-md);
+           height: var(--btn-md);
            background: radial-gradient(circle, rgba(255,200,0,0.7), rgba(200,150,0,0.7));
            border-radius: 50%;
            border: 3px solid rgba(255,255,255,0.5);
@@ -199,19 +242,21 @@
            display: flex;
            align-items: center;
            justify-content: center;
-           font-size: 10px;
+           font-size: clamp(8px, 1.3vw, 11px);
            color: #fff;
            font-weight: bold;
            cursor: pointer;
            user-select: none;
+           z-index: 20;
        }
 
+       /* JUMP — above RELOAD */
        #jump-button {
            position: absolute;
-           bottom: 110px;
-           right: 140px;
-           width: 60px;
-           height: 60px;
+           bottom: calc(var(--b-pad) + var(--btn-md) + var(--gap) + (var(--btn-lg) - var(--btn-md)) / 2);
+           right: calc(var(--r-pad) + var(--btn-lg) + var(--gap));
+           width: var(--btn-md);
+           height: var(--btn-md);
            background: radial-gradient(circle, rgba(100,220,100,0.85), rgba(40,160,40,0.85));
            border-radius: 50%;
            border: 3px solid rgba(180,255,180,0.7);
@@ -219,7 +264,7 @@
            display: flex;
            align-items: center;
            justify-content: center;
-           font-size: 10px;
+           font-size: clamp(8px, 1.3vw, 11px);
            font-weight: bold;
            color: #fff;
            cursor: pointer;
@@ -239,12 +284,13 @@
            box-shadow: 0 0 10px rgba(0,180,255,0.6);
        }
 
+       /* WEAPON CYCLE — above FIRE */
        #weapon-cycle-button {
            position: absolute;
-           bottom: 150px;
-           right: 30px;
-           width: 60px;
-           height: 60px;
+           bottom: calc(var(--b-pad) + var(--btn-lg) + var(--gap));
+           right: var(--r-pad);
+           width: var(--btn-md);
+           height: var(--btn-md);
            background: rgba(0,0,0,0.8);
            border: 2px solid #0f0;
            border-radius: 10px;
@@ -257,6 +303,7 @@
            user-select: none;
            box-shadow: 0 0 10px rgba(0,255,0,0.3);
            transition: all 0.2s;
+           z-index: 20;
        }
 
        #weapon-cycle-button:active {
@@ -265,31 +312,32 @@
        }
 
        #weapon-icon {
-           font-size: 20px;
+           font-size: clamp(14px, 2.5vw, 22px);
            margin-bottom: 1px;
        }
 
        #weapon-name {
            color: #0f0;
-           font-size: 9px;
+           font-size: clamp(7px, 1.1vw, 10px);
            font-weight: bold;
            text-shadow: 0 0 5px #0f0;
        }
 
        #weapon-slot-indicator {
            color: #888;
-           font-size: 8px;
+           font-size: clamp(6px, 0.9vw, 9px);
            margin-top: 1px;
        }
 
+       /* WEAPON HINT — above weapon-cycle-button */
        #weapon-hint {
            position: absolute;
-           bottom: 207px;
-           right: 30px;
+           bottom: calc(var(--b-pad) + var(--btn-lg) + var(--btn-md) + var(--gap) * 2 + 2px);
+           right: var(--r-pad);
            color: rgba(255,255,255,0.5);
-           font-size: 9px;
+           font-size: clamp(7px, 1vw, 10px);
            text-align: center;
-           width: 72px;
+           width: var(--btn-md);
            pointer-events: none;
        }
 
@@ -423,11 +471,11 @@
 
        #pickup-hint {
            position: absolute;
-           bottom: 200px;
+           bottom: calc(var(--b-pad) + var(--joy-size) + 8px);
            left: 50%;
            transform: translateX(-50%);
            color: #ff0;
-           font-size: 12px;
+           font-size: clamp(10px, 1.6vw, 14px);
            text-shadow: 2px 2px 4px #000;
            display: none;
        }
@@ -448,13 +496,13 @@
            animation: weaponSwitch 0.3s ease-out;
        }
 
-       /* MINIMAP */
+       /* MINIMAP — top-right, scales with viewport */
        #minimap {
            position: absolute;
-           top: 10px;
-           right: 10px;
-           width: 100px;
-           height: 100px;
+           top: max(8px, 1vh);
+           right: max(8px, 1vw);
+           width: min(100px, 14vw);
+           height: min(100px, 14vw);
            background: rgba(0,0,0,0.6);
            border: 2px solid rgba(0,255,0,0.5);
            border-radius: 50%;
@@ -486,11 +534,11 @@
        /* STREAK BADGE */
        #streak-display {
            position: absolute;
-           top: 10px;
+           top: calc(max(8px,1vh) + var(--btn-md) + 8px); /* below top-centre buttons */
            left: 50%;
            transform: translateX(-50%);
            color: #fff;
-           font-size: 14px;
+           font-size: clamp(11px, 1.8vw, 16px);
            text-align: center;
            pointer-events: none;
            text-shadow: 2px 2px 6px #000;
@@ -502,20 +550,21 @@
            bottom: 5px;
            left: 5px;
            color: rgba(255,255,255,0.4);
-           font-size: 11px;
+           font-size: clamp(9px, 1.2vw, 12px);
            pointer-events: none;
        }
 
 
 
-       /* THIRD PERSON BUTTON */
+       /* ---- TOP-CENTRE: third-person + mod-menu buttons ---- */
+       /* Placed in a flex row centred at the top, gap between them */
        #third-person-button {
            position: absolute;
-           top: 10px;
-           left: calc(50% - 88px);
-           transform: none;
-           width: 60px;
-           height: 60px;
+           top: max(8px, 1vh);
+           left: 50%;
+           transform: translateX(calc(-100% - 4px)); /* left of centre */
+           width: var(--btn-md);
+           height: var(--btn-md);
            background: rgba(0,0,0,0.8);
            border: 3px solid #888;
            border-radius: 12px;
@@ -526,29 +575,27 @@
            justify-content: center;
            cursor: pointer;
            user-select: none;
-           transition: all 0.2s;
-           font-size: 10px;
+           transition: border-color 0.2s, color 0.2s;
+           font-size: clamp(8px, 1.2vw, 11px);
            color: #888;
            font-weight: bold;
+           z-index: 25;
        }
        #third-person-button.active {
            border-color: #ff9900;
            color: #ff9900;
            box-shadow: 0 0 15px rgba(255,153,0,0.5);
        }
-       #third-person-button:active {
-           transform: scale(0.95);
-       }
-       #third-person-icon { font-size: 22px; margin-bottom: 2px; }
+       #third-person-button:active { transform: translateX(calc(-100% - 4px)) scale(0.95); }
+       #third-person-icon { font-size: clamp(16px, 3vw, 24px); margin-bottom: 2px; }
 
-       /* SHOP BUTTON */
+       /* SHOP BUTTON — above weapon-cycle-button column */
        #shop-button {
            position: absolute;
-           bottom: 213px;
-           right: 30px;
-           transform: none;
-           width: 60px;
-           height: 60px;
+           bottom: calc(var(--b-pad) + var(--btn-lg) + var(--btn-md) + var(--gap) * 2);
+           right: var(--r-pad);
+           width: var(--btn-md);
+           height: var(--btn-md);
            background: radial-gradient(circle, rgba(255,200,0,0.85), rgba(180,130,0,0.85));
            border-radius: 10px;
            border: 2px solid rgba(255,255,255,0.5);
@@ -557,7 +604,7 @@
            flex-direction: column;
            align-items: center;
            justify-content: center;
-           font-size: 8px;
+           font-size: clamp(7px, 1vw, 9px);
            color: #fff;
            font-weight: bold;
            cursor: pointer;
@@ -566,26 +613,49 @@
            z-index: 20;
        }
        #shop-button:active { transform: scale(0.95); }
-       #shop-button-icon { font-size: 18px; }
+       #shop-button-icon { font-size: clamp(14px, 2.5vw, 20px); }
 
-       /* COINS DISPLAY */
+       /* COINS DISPLAY — above shop button */
        #coins-display {
            position: absolute;
-           bottom: 263px;
-           right: 30px;
-           transform: none;
+           bottom: calc(var(--b-pad) + var(--btn-lg) + var(--btn-md) * 2 + var(--gap) * 3);
+           right: var(--r-pad);
            background: rgba(0,0,0,0.7);
            border: 2px solid #ffcc00;
            border-radius: 20px;
            padding: 3px 10px;
            color: #ffcc00;
-           font-size: 12px;
+           font-size: clamp(9px, 1.4vw, 13px);
            font-weight: bold;
            pointer-events: none;
            text-shadow: 0 0 8px #ffcc00;
            z-index: 20;
            text-align: center;
-           width: 72px;
+           width: var(--btn-md);
+       }
+
+       /* ACTIVE PERKS HUD — above coins display */
+       #active-perks-hud {
+           position: absolute;
+           bottom: calc(var(--b-pad) + var(--btn-lg) + var(--btn-md) * 2 + var(--gap) * 3 + 32px);
+           right: var(--r-pad);
+           display: flex;
+           flex-direction: column;
+           gap: 4px;
+           pointer-events: none;
+           z-index: 20;
+           align-items: flex-end;
+       }
+       .hud-perk-badge {
+           background: rgba(0,0,0,0.75);
+           border: 2px solid #00ffcc;
+           border-radius: 8px;
+           padding: 3px 8px;
+           color: #00ffcc;
+           font-size: clamp(9px, 1.3vw, 12px);
+           font-weight: bold;
+           text-align: center;
+           min-width: var(--btn-md);
        }
 
        /* SHOP OVERLAY */
@@ -671,29 +741,7 @@
            pointer-events: all;
        }
 
-       /* ACTIVE PERK HUD ICONS */
-       #active-perks-hud {
-           position: absolute;
-           bottom: 340px;
-           right: 30px;
-           display: flex;
-           flex-direction: column;
-           gap: 4px;
-           pointer-events: none;
-           z-index: 20;
-           align-items: flex-end;
-       }
-       .hud-perk-badge {
-           background: rgba(0,0,0,0.75);
-           border: 2px solid #00ffcc;
-           border-radius: 8px;
-           padding: 3px 8px;
-           color: #00ffcc;
-           font-size: 11px;
-           font-weight: bold;
-           text-align: center;
-           min-width: 80px;
-       }
+       /* auto-aim ring placeholder — replaced above */
 
        /* AUTO-AIM RING on crosshair */
        #auto-aim-ring {
@@ -722,13 +770,14 @@
        /* ============================
           MOD MENU STYLES
           ============================ */
+       /* MOD MENU BUTTON — right of third-person, top centre */
        #mod-menu-button {
            position: absolute;
-           top: 10px;
-           left: calc(50% + 8px);
-           transform: none;
-           width: 60px;
-           height: 60px;
+           top: max(8px, 1vh);
+           left: 50%;
+           transform: translateX(4px); /* right of centre */
+           width: var(--btn-md);
+           height: var(--btn-md);
            background: rgba(0,0,0,0.85);
            border: 2px solid #ff00ff;
            border-radius: 10px;
@@ -738,7 +787,7 @@
            justify-content: center;
            cursor: pointer;
            user-select: none;
-           font-size: 10px;
+           font-size: clamp(8px, 1.2vw, 11px);
            font-weight: bold;
            color: #ff00ff;
            text-shadow: 0 0 8px #ff00ff;
@@ -746,7 +795,7 @@
            z-index: 25;
            transition: all 0.2s;
        }
-       #mod-menu-button:active { transform: scale(0.95); }
+       #mod-menu-button:active { transform: translateX(4px) scale(0.95); }
 
        #mod-menu-overlay {
            position: absolute;
