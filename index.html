@@ -1641,6 +1641,7 @@
        let labubuTemplate = null;
        let labubuLoaded = false;
        let labubuBaseHeight = 0; // Store the base height once
+       let labubuModelHeight = 0;
 
        function loadLabubuModel() {
            return new Promise((resolve, reject) => {
@@ -1676,10 +1677,10 @@
                        labubuTemplate.updateMatrixWorld(true);
                        const box = new THREE.Box3().setFromObject(labubuTemplate);
                        labubuBaseHeight = -box.min.y;
+                       labubuModelHeight = box.max.y - box.min.y;
                        
                        labubuLoaded = true;
-                       console.log('Labubu zombie model loaded successfully');
-                       console.log('Base height calculated:', labubuBaseHeight);
+                       console.log('Labubu: baseHeight=', labubuBaseHeight, 'modelHeight=', labubuModelHeight);
                        resolve();
                    },
                    (progress) => {
@@ -1695,12 +1696,60 @@
            });
        }
 
+       // WARRIOR PLAYER MODEL (GLB)
+       // ==========================================
+       const warriorModelUrl = 'https://raw.githubusercontent.com/MrDemoManHAX/LabubuZombies3DGame/main/warrior.glb';
+       let warriorTemplate = null;
+       let warriorLoaded = false;
+       let warriorBaseHeight = 0;
+
+       function loadWarriorModel() {
+           return new Promise((resolve) => {
+               gltfLoader.load(
+                   warriorModelUrl,
+                   (gltf) => {
+                       warriorTemplate = gltf.scene;
+                       warriorTemplate.traverse((child) => {
+                           if (child.isMesh) {
+                               child.castShadow = true;
+                               child.receiveShadow = true;
+                               if (child.material) {
+                                   const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                   materials.forEach(mat => {
+                                       mat.transparent = false;
+                                       mat.opacity = 1;
+                                       mat.alphaTest = 0;
+                                       mat.depthWrite = true;
+                                       mat.depthTest = true;
+                                       mat.side = THREE.FrontSide;
+                                       mat.needsUpdate = true;
+                                   });
+                               }
+                           }
+                       });
+                       warriorTemplate.updateMatrixWorld(true);
+                       const box = new THREE.Box3().setFromObject(warriorTemplate);
+                       warriorBaseHeight = -box.min.y;
+                       warriorLoaded = true;
+                       console.log('Warrior player model loaded successfully');
+                       resolve();
+                   },
+                   undefined,
+                   (error) => {
+                       console.error('Error loading warrior model:', error);
+                       resolve();
+                   }
+               );
+           });
+       }
+
        // GOLEM BOSS MODEL (GLB)
        // ==========================================
        const golemModelUrl = 'https://raw.githubusercontent.com/MrDemoManHAX/LabubuZombies3DGame/main/golem.glb';
        let golemTemplate = null;
        let golemLoaded = false;
        let golemBaseHeight = 0;
+       let golemModelHeight = 0;
 
        function loadGolemModel() {
            return new Promise((resolve) => {
@@ -1729,13 +1778,63 @@
                        golemTemplate.updateMatrixWorld(true);
                        const box = new THREE.Box3().setFromObject(golemTemplate);
                        golemBaseHeight = -box.min.y;
+                       golemModelHeight = box.max.y - box.min.y;
                        golemLoaded = true;
-                       console.log('Golem boss model loaded successfully');
+                       console.log('Golem: baseHeight=', golemBaseHeight, 'modelHeight=', golemModelHeight);
                        resolve();
                    },
                    undefined,
                    (error) => {
                        console.error('Error loading golem model:', error);
+                       resolve();
+                   }
+               );
+           });
+       }
+
+       // OVERLORD SUPER BOSS MODEL (GLB)
+       // ==========================================
+       const overlordModelUrl = 'https://raw.githubusercontent.com/MrDemoManHAX/LabubuZombies3DGame/main/overlord.glb';
+       let overlordTemplate = null;
+       let overlordLoaded = false;
+       let overlordBaseHeight = 0;
+       let overlordModelHeight = 0;
+
+       function loadOverlordModel() {
+           return new Promise((resolve) => {
+               gltfLoader.load(
+                   overlordModelUrl,
+                   (gltf) => {
+                       overlordTemplate = gltf.scene;
+                       overlordTemplate.traverse((child) => {
+                           if (child.isMesh) {
+                               child.castShadow = true;
+                               child.receiveShadow = true;
+                               if (child.material) {
+                                   const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                   materials.forEach(mat => {
+                                       mat.transparent = false;
+                                       mat.opacity = 1;
+                                       mat.alphaTest = 0;
+                                       mat.depthWrite = true;
+                                       mat.depthTest = true;
+                                       mat.side = THREE.FrontSide;
+                                       mat.needsUpdate = true;
+                                   });
+                               }
+                           }
+                       });
+                       overlordTemplate.updateMatrixWorld(true);
+                       const box = new THREE.Box3().setFromObject(overlordTemplate);
+                       overlordBaseHeight = -box.min.y;
+                       overlordModelHeight = box.max.y - box.min.y;
+                       overlordLoaded = true;
+                       console.log('Overlord: baseHeight=', overlordBaseHeight, 'modelHeight=', overlordModelHeight);
+                       resolve();
+                   },
+                   undefined,
+                   (error) => {
+                       console.error('Error loading overlord model:', error);
                        resolve();
                    }
                );
@@ -2934,16 +3033,19 @@
                const sizeMult = isSuperBoss ? CONFIG.SUPER_BOSS_SIZE_MULT : (isBoss ? CONFIG.BOSS_SIZE_MULT : 1);
                this.sizeMult = sizeMult;
 
-               const usesGolem = (isBoss || isSuperBoss) && golemLoaded && golemTemplate;
-               const activeTemplate = usesGolem ? golemTemplate : labubuTemplate;
-               const activeBaseHeight = usesGolem ? golemBaseHeight : labubuBaseHeight;
-               const activeLoaded = usesGolem ? golemLoaded : labubuLoaded;
+               const usesOverlord = isSuperBoss && overlordLoaded && overlordTemplate;
+               const usesGolem = !isSuperBoss && isBoss && golemLoaded && golemTemplate;
+               const activeTemplate = usesOverlord ? overlordTemplate : (usesGolem ? golemTemplate : labubuTemplate);
+               const activeBaseHeight = usesOverlord ? overlordBaseHeight : (usesGolem ? golemBaseHeight : labubuBaseHeight);
+               const activeModelHeight = usesOverlord ? overlordModelHeight : (usesGolem ? golemModelHeight : labubuModelHeight);
+               const activeLoaded = usesOverlord ? overlordLoaded : (usesGolem ? golemLoaded : labubuLoaded);
 
                if (activeLoaded && activeTemplate) {
                    const model = deepCloneGLTF(activeTemplate);
                    model.scale.set(sizeMult, sizeMult, sizeMult);
                    model.rotation.y = Math.PI;
                    this.modelBaseY = activeBaseHeight * sizeMult;
+                   this.modelHeight = activeModelHeight * sizeMult;
                    model.position.y = this.modelBaseY;
 
                    // Boss/SuperBoss: restore original model colours, just brighten with emissive
@@ -4220,6 +4322,14 @@
            const deltaX = touch.clientX - lookState.lastX;
            const deltaY = touch.clientY - lookState.lastY;
 
+           // Any manual look input breaks the auto-aim lock so player regains control
+           if (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1) {
+               if (autoAimState.lockedZombie) {
+                   autoAimState.lockedZombie = null;
+                   autoAimRing.classList.remove('locked');
+               }
+           }
+
            lookState.rotationY -= deltaX * CONFIG.LOOK_SENSITIVITY_X;
            lookState.rotationX -= deltaY * CONFIG.LOOK_SENSITIVITY_Y;
            lookState.rotationX = Math.max(-Math.PI / 2.5, Math.min(Math.PI / 2.5, lookState.rotationX));
@@ -4251,6 +4361,20 @@
            
            await loadLabubuModel();
            await loadGolemModel();
+           await loadOverlordModel();
+           await loadWarriorModel();
+
+           // Now that warrior is loaded, swap out the fallback procedural body
+           if (warriorLoaded && warriorTemplate) {
+               while (playerBodyGroup.children.length > 0) {
+                   playerBodyGroup.remove(playerBodyGroup.children[0]);
+               }
+               const warriorModel = deepCloneGLTF(warriorTemplate);
+               warriorModel.position.y = warriorBaseHeight;
+               warriorModel.rotation.y = Math.PI;
+               playerBodyGroup.add(warriorModel);
+               playerBodyGroup.userData.warriorModel = warriorModel;
+           }
            
            document.getElementById('loading-screen').style.display = 'none';
            
@@ -4547,7 +4671,7 @@
        const autoAimState = {
            enabled: false,
            lockedZombie: null,
-           SMOOTH: 0.18
+           SMOOTH: 0.12
        };
 
        // Ring CSS is 80px wide = 40px radius — acquisition must match this exactly
@@ -4561,20 +4685,30 @@
        // thirdPersonState was declared early (before updateWeaponModel) — just init worldPos here
        thirdPersonState.worldPos = new THREE.Vector3();
 
-       // Simple player body mesh visible only in 3rd person
+       // Player body group visible only in 3rd person
        const playerBodyGroup = new THREE.Group();
-       // Body
-       const bodyGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.0, 8);
-       const bodyMat = new THREE.MeshLambertMaterial({ color: 0x2244aa });
-       const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
-       bodyMesh.position.y = 0.5;
-       playerBodyGroup.add(bodyMesh);
-       // Head
-       const headGeo = new THREE.SphereGeometry(0.22, 8, 8);
-       const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc99 });
-       const headMesh = new THREE.Mesh(headGeo, headMat);
-       headMesh.position.y = 1.22;
-       playerBodyGroup.add(headMesh);
+
+       // Use warrior GLB if loaded, otherwise fall back to procedural capsule
+       if (warriorLoaded && warriorTemplate) {
+           const warriorModel = deepCloneGLTF(warriorTemplate);
+           warriorModel.position.y = warriorBaseHeight;
+           warriorModel.rotation.y = Math.PI;
+           playerBodyGroup.add(warriorModel);
+           playerBodyGroup.userData.warriorModel = warriorModel;
+       } else {
+           // Fallback: simple procedural body
+           const bodyGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.0, 8);
+           const bodyMat = new THREE.MeshLambertMaterial({ color: 0x2244aa });
+           const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+           bodyMesh.position.y = 0.5;
+           playerBodyGroup.add(bodyMesh);
+           const headGeo = new THREE.SphereGeometry(0.22, 8, 8);
+           const headMat = new THREE.MeshLambertMaterial({ color: 0xffcc99 });
+           const headMesh = new THREE.Mesh(headGeo, headMat);
+           headMesh.position.y = 1.22;
+           playerBodyGroup.add(headMesh);
+       }
+
        playerBodyGroup.visible = false;
        scene.add(playerBodyGroup);
 
@@ -4622,11 +4756,14 @@
 
        // Aim height scaled for boss (2.5x bigger) vs regular labubu
        function aimHeight(zombie) {
-           // Use actual model height if available (Labubu model), aim at ~55% up = chest
-           if (zombie.modelBaseY && zombie.modelBaseY > 0) {
-               return zombie.modelBaseY * 0.55;
+           // zombie.group.position is at ground level (y=0 on flat terrain).
+           // Inside the group, the GLB model is shifted up by modelBaseY so feet sit on ground.
+           // So world-space chest = group.position.y + modelBaseY + modelHeight * 0.55
+           // aimHeight returns the OFFSET from group.position.y, so:
+           if (zombie.model && zombie.modelHeight > 0) {
+               return zombie.modelBaseY + zombie.modelHeight * 0.55;
            }
-           // Procedural fallback: body centre geometry = 1.2 * sizeMult
+           // Procedural fallback
            const s = zombie.sizeMult || 1;
            return 1.2 * s;
        }
@@ -4722,10 +4859,27 @@
 
            autoAimRing.classList.add('locked');
 
-           // Steer camera toward locked target's torso
-           const zPos = autoAimState.lockedZombie.group.position.clone();
-           zPos.y += aimHeight(autoAimState.lockedZombie);
-           const delta = zPos.clone().sub(camera.position);
+           // Get the zombie's real world-space chest position directly
+           const zombie = autoAimState.lockedZombie;
+           let chestWorld;
+           if (zombie.model) {
+               try {
+                   const box = new THREE.Box3().setFromObject(zombie.group);
+                   if (!box.isEmpty()) {
+                       chestWorld = new THREE.Vector3(
+                           zombie.group.position.x,
+                           box.min.y + (box.max.y - box.min.y) * 0.55,
+                           zombie.group.position.z
+                       );
+                   }
+               } catch(e) {}
+           }
+           if (!chestWorld) {
+               chestWorld = zombie.group.position.clone();
+               chestWorld.y += (zombie.sizeMult || 1) * 1.2;
+           }
+
+           const delta = chestWorld.clone().sub(camera.position);
 
            const targetYaw = Math.atan2(-delta.x, -delta.z);
            const horizontal = Math.sqrt(delta.x * delta.x + delta.z * delta.z);
