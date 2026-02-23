@@ -243,8 +243,8 @@
            position: absolute;
            bottom: 150px;
            right: 30px;
-           width: 72px;
-           height: 52px;
+           width: 60px;
+           height: 60px;
            background: rgba(0,0,0,0.8);
            border: 2px solid #0f0;
            border-radius: 10px;
@@ -506,46 +506,15 @@
            pointer-events: none;
        }
 
-       /* AUTO-AIM BUTTON */
-       #auto-aim-button {
-           position: absolute;
-           top: 10px;
-           left: 50%;
-           transform: translateX(-50%);
-           width: 80px;
-           height: 60px;
-           background: rgba(0,0,0,0.8);
-           border: 3px solid #888;
-           border-radius: 12px;
-           pointer-events: all;
-           display: flex;
-           flex-direction: column;
-           align-items: center;
-           justify-content: center;
-           cursor: pointer;
-           user-select: none;
-           transition: all 0.2s;
-           font-size: 10px;
-           color: #888;
-           font-weight: bold;
-       }
-       #auto-aim-button.active {
-           border-color: #00ffff;
-           color: #00ffff;
-           box-shadow: 0 0 15px rgba(0,255,255,0.5);
-       }
-       #auto-aim-button:active {
-           transform: scale(0.95);
-       }
-       #auto-aim-icon { font-size: 22px; margin-bottom: 2px; }
+
 
        /* THIRD PERSON BUTTON */
        #third-person-button {
            position: absolute;
-           top: 80px;
-           left: 50%;
-           transform: translateX(-50%);
-           width: 80px;
+           top: 10px;
+           left: calc(50% - 88px);
+           transform: none;
+           width: 60px;
            height: 60px;
            background: rgba(0,0,0,0.8);
            border: 3px solid #888;
@@ -568,7 +537,7 @@
            box-shadow: 0 0 15px rgba(255,153,0,0.5);
        }
        #third-person-button:active {
-           transform: translateX(-50%) scale(0.95);
+           transform: scale(0.95);
        }
        #third-person-icon { font-size: 22px; margin-bottom: 2px; }
 
@@ -578,8 +547,8 @@
            bottom: 213px;
            right: 30px;
            transform: none;
-           width: 72px;
-           height: 44px;
+           width: 60px;
+           height: 60px;
            background: radial-gradient(circle, rgba(255,200,0,0.85), rgba(180,130,0,0.85));
            border-radius: 10px;
            border: 2px solid rgba(255,255,255,0.5);
@@ -755,11 +724,11 @@
           ============================ */
        #mod-menu-button {
            position: absolute;
-           top: 155px;
-           left: 50%;
-           transform: translateX(-50%);
-           width: 80px;
-           height: 40px;
+           top: 10px;
+           left: calc(50% + 8px);
+           transform: none;
+           width: 60px;
+           height: 60px;
            background: rgba(0,0,0,0.85);
            border: 2px solid #ff00ff;
            border-radius: 10px;
@@ -777,7 +746,7 @@
            z-index: 25;
            transition: all 0.2s;
        }
-       #mod-menu-button:active { transform: translateX(-50%) scale(0.95); }
+       #mod-menu-button:active { transform: scale(0.95); }
 
        #mod-menu-overlay {
            position: absolute;
@@ -998,10 +967,6 @@
        <div id="shoot-button">FIRE</div>
        <div id="reload-button">RELOAD</div>
 
-       <div id="auto-aim-button">
-           <span id="auto-aim-icon">🎯</span>
-           <span>AUTO AIM</span>
-       </div>
        <div id="auto-aim-ring"></div>
 
        <!-- MOD MENU BUTTON -->
@@ -1109,6 +1074,13 @@
                        </div>
                        <div class="mod-toggle" id="mod-perk-doubleTap-toggle"></div>
                    </div>
+               </div>
+               <div class="mod-row" id="mod-row-autoaim">
+                   <div>
+                       <div class="mod-label">Auto Aim</div>
+                       <div class="mod-desc">Locks on to zombies in crosshair</div>
+                   </div>
+                   <div class="mod-toggle" id="mod-autoaim-toggle"></div>
                </div>
                <div class="mod-row" id="mod-row-allweapons">
                    <div>
@@ -3193,14 +3165,11 @@
                } else {
                    gameState.regularZombiesKilled++;
                    const _curLimit = window._modZombieLimit !== undefined ? window._modZombieLimit : MAX_ZOMBIES_ON_GROUND;
-                   // Respawn if: still zombies left to spawn AND map is under the limit
-                   if (gameState.regularZombiesSpawned < gameState.regularZombiesTotal && zombies.length < _curLimit) {
-                       setTimeout(() => spawnOneRegularZombie(), 500);
-                   }
-                   // Safety net: if map is empty but wave isn't done spawning, force a respawn
-                   // This handles the case where mod limit was lower than wave size and
-                   // all on-map zombies die at once before the next spawn fires
-                   else if (zombies.length === 0 && gameState.regularZombiesSpawned < gameState.regularZombiesTotal) {
+                   // Zombies remaining in this wave = total - killed
+                   const _zombiesLeftInWave = gameState.regularZombiesTotal - gameState.regularZombiesKilled;
+                   // Respawn if: wave not done AND map is under limit
+                   // Use killed count not spawned count so lowering the limit mid-wave still works
+                   if (_zombiesLeftInWave > 0 && zombies.length < _curLimit) {
                        setTimeout(() => spawnOneRegularZombie(), 500);
                    }
                    // Trigger boss once all regular zombies are cleared
@@ -4242,16 +4211,7 @@
        // Ring CSS is 80px wide = 40px radius — acquisition must match this exactly
        const AUTO_AIM_RING_RADIUS_PX = 40;
 
-       const autoAimBtn = document.getElementById('auto-aim-button');
        const autoAimRing = document.getElementById('auto-aim-ring');
-
-       autoAimBtn.addEventListener('click', () => {
-           autoAimState.enabled = !autoAimState.enabled;
-           autoAimState.lockedZombie = null;
-           autoAimBtn.classList.toggle('active', autoAimState.enabled);
-           autoAimRing.style.display = autoAimState.enabled ? 'block' : 'none';
-           autoAimRing.classList.remove('locked');
-       });
 
        // ==========================================
        // THIRD-PERSON VIEW
@@ -4563,6 +4523,8 @@
                document.getElementById('mod-speed-input').value = CONFIG.PLAYER_SPEED;
                syncToggle('mod-godmode-toggle', modState.godMode);
                syncToggle('mod-unlimitedammo-toggle', modState.unlimitedAmmo);
+               syncToggle('mod-autoaim-toggle', modState.autoAim || false);
+               document.getElementById('mod-row-autoaim').classList.toggle('active-mod', modState.autoAim || false);
                syncToggle('mod-allweapons-toggle', modState.allWeapons || false);
                syncToggle('mod-noreload-toggle', modState.noReload || false);
                syncToggle('mod-jetpack-toggle', modState.jetpack || false);
@@ -4639,6 +4601,22 @@
            CONFIG.PLAYER_SPEED = val;
            flashStatus('mod-speed-status');
        });
+
+       // Auto aim toggle
+       modState.autoAim = false;
+       document.getElementById('mod-autoaim-toggle').addEventListener('click', () => {
+           modState.autoAim = !modState.autoAim;
+           autoAimState.enabled = modState.autoAim;
+           autoAimState.lockedZombie = null;
+           autoAimRing.style.display = modState.autoAim ? 'block' : 'none';
+           autoAimRing.classList.remove('locked');
+           syncToggle('mod-autoaim-toggle', modState.autoAim);
+           document.getElementById('mod-row-autoaim').classList.toggle('active-mod', modState.autoAim);
+           showNotification(modState.autoAim ? '🎯 AUTO AIM ON' : '🎯 AUTO AIM OFF', '#00ffff');
+       });
+       document.getElementById('mod-autoaim-toggle').addEventListener('touchstart', (e) => {
+           e.preventDefault(); document.getElementById('mod-autoaim-toggle').click();
+       }, { passive: false });
 
        // All weapons toggle
        modState.allWeapons = false;
