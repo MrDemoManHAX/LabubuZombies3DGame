@@ -1065,7 +1065,6 @@
            <!-- TOGGLES -->
            <div class="mod-section">
                <div class="mod-section-title">🔀 Toggles</div>
-
                <!-- Perks dropdown -->
                <div class="mod-row" id="mod-row-perks-header" style="cursor:pointer;">
                    <div>
@@ -1074,7 +1073,7 @@
                    </div>
                    <div style="color:#ff00ff;font-size:18px;" id="mod-perks-arrow">▼</div>
                </div>
-               <div id="mod-perks-dropdown" style="display:none; width:92%; max-width:420px; margin: -4px auto 8px auto;">
+               <div id="mod-perks-dropdown" style="display:none;">
                    <div class="mod-row" id="mod-row-perk-doublePickup">
                        <div>
                            <div class="mod-label">🎒 Scavenger</div>
@@ -1110,6 +1109,27 @@
                        </div>
                        <div class="mod-toggle" id="mod-perk-doubleTap-toggle"></div>
                    </div>
+               </div>
+               <div class="mod-row" id="mod-row-allweapons">
+                   <div>
+                       <div class="mod-label">All Weapons</div>
+                       <div class="mod-desc">Gives you every weapon with full ammo</div>
+                   </div>
+                   <div class="mod-toggle" id="mod-allweapons-toggle"></div>
+               </div>
+               <div class="mod-row" id="mod-row-noreload">
+                   <div>
+                       <div class="mod-label">No Reload</div>
+                       <div class="mod-desc">Clip never needs reloading</div>
+                   </div>
+                   <div class="mod-toggle" id="mod-noreload-toggle"></div>
+               </div>
+               <div class="mod-row" id="mod-row-jetpack">
+                   <div>
+                       <div class="mod-label">Activate Jetpack</div>
+                       <div class="mod-desc">Unlimited fuel jetpack</div>
+                   </div>
+                   <div class="mod-toggle" id="mod-jetpack-toggle"></div>
                </div>
                <div class="mod-row" id="mod-row-godmode">
                    <div>
@@ -1899,6 +1919,8 @@
        function checkDoorTeleport(playerPos) {
            const now = Date.now();
            if (now - gameState.lastTeleportTime < CONFIG.TELEPORT_COOLDOWN) return;
+           // Only trigger at ground level - prevents flying above doors from teleporting
+           if (playerPos.y > CONFIG.PLAYER_HEIGHT + 1.5) return;
 
            for (const doorPair of doors) {
                const dist1 = Math.sqrt(
@@ -3170,9 +3192,15 @@
                    checkWaveComplete();
                } else {
                    gameState.regularZombiesKilled++;
-                   // Respawn a new zombie if there are still more to spawn this wave AND under limit
                    const _curLimit = window._modZombieLimit !== undefined ? window._modZombieLimit : MAX_ZOMBIES_ON_GROUND;
+                   // Respawn if: still zombies left to spawn AND map is under the limit
                    if (gameState.regularZombiesSpawned < gameState.regularZombiesTotal && zombies.length < _curLimit) {
+                       setTimeout(() => spawnOneRegularZombie(), 500);
+                   }
+                   // Safety net: if map is empty but wave isn't done spawning, force a respawn
+                   // This handles the case where mod limit was lower than wave size and
+                   // all on-map zombies die at once before the next spawn fires
+                   else if (zombies.length === 0 && gameState.regularZombiesSpawned < gameState.regularZombiesTotal) {
                        setTimeout(() => spawnOneRegularZombie(), 500);
                    }
                    // Trigger boss once all regular zombies are cleared
@@ -3495,6 +3523,9 @@
            lastShootTime = now;
 
            if (!modState.unlimitedAmmo) currentWeapon.ammo--;
+           if (modState.noReload && currentWeapon.ammo <= 0) {
+               currentWeapon.ammo = getCurrentWeaponDef().clipSize;
+           }
            updateUI();
 
            muzzleFlash.color.setHex(weaponDef.name === 'FREEZE' ? 0x00ffff : (weaponDef.explosionColor || 0xffaa00));
@@ -3570,7 +3601,7 @@
            const currentWeapon = getCurrentWeapon();
            const weaponDef = getCurrentWeaponDef();
            
-           if (modState.unlimitedAmmo) return;
+           if (modState.unlimitedAmmo || modState.noReload) return;
            if (gameState.isReloading || currentWeapon.totalAmmo === 0 || currentWeapon.ammo === weaponDef.clipSize) return;
 
            gameState.isReloading = true;
@@ -3758,7 +3789,8 @@
            // Jetpack thrust: held button consumes fuel and pushes up
            if (gameState.flyUnlocked && gameState.flyHeld && gameState.flyFuel > 0) {
                gameState.jumpVy = Math.min(gameState.jumpVy + 0.025, 0.25);
-               gameState.flyFuel = Math.max(0, gameState.flyFuel - 0.0045);
+               if (!modState.jetpack) gameState.flyFuel = Math.max(0, gameState.flyFuel - 0.0045);
+               else gameState.flyFuel = 100;
                updateFuelBar();
            }
 
@@ -4514,25 +4546,38 @@
        // ==========================================
        const modState = {
            godMode: false,
-           allPerksActive: false
        };
 
        let modMenuOpen = false;
 
        function openModMenu() {
-           modMenuOpen = true;
-           shopOpen = true; // pause game loop
-           // Refresh live displays
-           document.getElementById('mod-zombie-limit-display').textContent = MAX_ZOMBIES_ON_GROUND;
-           document.getElementById('mod-zombie-limit-input').value = MAX_ZOMBIES_ON_GROUND;
-           document.getElementById('mod-health-display').textContent = Math.round(gameState.health);
-           document.getElementById('mod-maxhealth-display').textContent = CONFIG.MAX_HEALTH;
-           document.getElementById('mod-health-input').value = Math.round(gameState.health);
-           document.getElementById('mod-speed-input').value = CONFIG.PLAYER_SPEED;
-           // Sync toggles
-           syncToggle('mod-godmode-toggle', modState.godMode);
-           syncToggle('mod-allperks-toggle', modState.allPerksActive);
-           document.getElementById('mod-menu-overlay').classList.add('open');
+           try {
+               modMenuOpen = true;
+               shopOpen = true;
+               document.getElementById('mod-menu-overlay').classList.add('open');
+               document.getElementById('mod-zombie-limit-display').textContent = window._modZombieLimit || MAX_ZOMBIES_ON_GROUND;
+               document.getElementById('mod-zombie-limit-input').value = window._modZombieLimit || MAX_ZOMBIES_ON_GROUND;
+               document.getElementById('mod-health-display').textContent = Math.round(gameState.health);
+               document.getElementById('mod-maxhealth-display').textContent = CONFIG.MAX_HEALTH;
+               document.getElementById('mod-health-input').value = Math.round(gameState.health);
+               document.getElementById('mod-speed-input').value = CONFIG.PLAYER_SPEED;
+               syncToggle('mod-godmode-toggle', modState.godMode);
+               syncToggle('mod-unlimitedammo-toggle', modState.unlimitedAmmo);
+               syncToggle('mod-allweapons-toggle', modState.allWeapons || false);
+               syncToggle('mod-noreload-toggle', modState.noReload || false);
+               syncToggle('mod-jetpack-toggle', modState.jetpack || false);
+               document.getElementById('mod-row-allweapons').classList.toggle('active-mod', modState.allWeapons || false);
+               document.getElementById('mod-row-noreload').classList.toggle('active-mod', modState.noReload || false);
+               document.getElementById('mod-row-jetpack').classList.toggle('active-mod', modState.jetpack || false);
+               document.getElementById('mod-row-unlimitedammo').classList.toggle('active-mod', modState.unlimitedAmmo);
+               document.getElementById('mod-row-godmode').classList.toggle('active-mod', modState.godMode);
+               ['doublePickup', 'invisibility', 'adrenaline', 'hollowPoints', 'doubleTap'].forEach(perkId => {
+                   const active = perks[perkId] ? perks[perkId].active : false;
+                   syncToggle('mod-perk-' + perkId + '-toggle', active);
+                   const rowEl = document.getElementById('mod-row-perk-' + perkId);
+                   if (rowEl) rowEl.classList.toggle('active-mod', active);
+               });
+           } catch(e) { console.error('Mod menu error:', e); }
        }
 
        function closeModMenu() {
@@ -4595,6 +4640,74 @@
            flashStatus('mod-speed-status');
        });
 
+       // All weapons toggle
+       modState.allWeapons = false;
+       document.getElementById('mod-allweapons-toggle').addEventListener('click', () => {
+           modState.allWeapons = !modState.allWeapons;
+           syncToggle('mod-allweapons-toggle', modState.allWeapons);
+           document.getElementById('mod-row-allweapons').classList.toggle('active-mod', modState.allWeapons);
+           if (modState.allWeapons) {
+               ['shotgun', 'rocketLauncher', 'grenadeLauncher', 'freezeGun'].forEach(type => {
+                   addWeapon(type);
+                   const w = gameState.weapons.find(x => x.type === type);
+                   if (w) w.totalAmmo = 9999;
+               });
+               const rifle = gameState.weapons.find(x => x.type === 'rifle');
+               if (rifle) rifle.totalAmmo = 9999;
+               updateUI();
+               showNotification('🔫 ALL WEAPONS GIVEN!', '#ff00ff');
+           } else {
+               gameState.weapons = gameState.weapons.filter(w => w.type === 'rifle');
+               gameState.currentWeaponIndex = 0;
+               updateWeaponModel();
+               updateWeaponCycleButton();
+               updateUI();
+               showNotification('🔫 WEAPONS RESET', '#ff6644');
+           }
+       });
+       document.getElementById('mod-allweapons-toggle').addEventListener('touchstart', (e) => {
+           e.preventDefault(); document.getElementById('mod-allweapons-toggle').click();
+       }, { passive: false });
+
+       // No reload toggle
+       modState.noReload = false;
+       document.getElementById('mod-noreload-toggle').addEventListener('click', () => {
+           modState.noReload = !modState.noReload;
+           syncToggle('mod-noreload-toggle', modState.noReload);
+           document.getElementById('mod-row-noreload').classList.toggle('active-mod', modState.noReload);
+           showNotification(modState.noReload ? '🔄 NO RELOAD ON' : '🔄 NO RELOAD OFF', '#ff00ff');
+       });
+       document.getElementById('mod-noreload-toggle').addEventListener('touchstart', (e) => {
+           e.preventDefault(); document.getElementById('mod-noreload-toggle').click();
+       }, { passive: false });
+
+       // Jetpack toggle
+       modState.jetpack = false;
+       document.getElementById('mod-jetpack-toggle').addEventListener('click', () => {
+           modState.jetpack = !modState.jetpack;
+           syncToggle('mod-jetpack-toggle', modState.jetpack);
+           document.getElementById('mod-row-jetpack').classList.toggle('active-mod', modState.jetpack);
+           if (modState.jetpack) {
+               gameState.flyUnlocked = true;
+               gameState.flyFuel = 100;
+               const jBtn = document.getElementById('jump-button');
+               jBtn.textContent = '🚀 FLY';
+               jBtn.classList.add('fly-mode');
+               document.getElementById('fuel-bar').style.display = 'block';
+               showNotification('🚀 JETPACK ACTIVATED!', '#0af');
+           } else {
+               gameState.flyUnlocked = false;
+               const jBtn = document.getElementById('jump-button');
+               jBtn.textContent = '🦘 JUMP';
+               jBtn.classList.remove('fly-mode');
+               document.getElementById('fuel-bar').style.display = 'none';
+               showNotification('🚀 JETPACK OFF', '#ff6644');
+           }
+       });
+       document.getElementById('mod-jetpack-toggle').addEventListener('touchstart', (e) => {
+           e.preventDefault(); document.getElementById('mod-jetpack-toggle').click();
+       }, { passive: false });
+
        // God mode toggle
        document.getElementById('mod-godmode-toggle').addEventListener('click', () => {
            modState.godMode = !modState.godMode;
@@ -4628,8 +4741,7 @@
                const isActive = perks[perkId].active;
                if (!isActive) {
                    const def = PERK_DEFS.find(p => p.id === perkId);
-                   const infiniteDef = Object.assign({}, def, { duration: 86400000 });
-                   activatePerk(perkId, infiniteDef);
+                   activatePerk(perkId, Object.assign({}, def, { duration: 86400000 }));
                } else {
                    const state = perks[perkId];
                    state.active = false;
@@ -4642,20 +4754,8 @@
                syncToggle('mod-perk-' + perkId + '-toggle', !isActive);
                rowEl.classList.toggle('active-mod', !isActive);
            });
+           toggleEl.addEventListener('touchstart', (e) => { e.preventDefault(); toggleEl.click(); }, { passive: false });
        });
-
-       // Sync perk toggles when mod menu opens (so they reflect current state)
-       const _origOpenModMenu = openModMenu;
-       openModMenu = function() {
-           _origOpenModMenu();
-           ['doublePickup', 'invisibility', 'adrenaline', 'hollowPoints', 'doubleTap'].forEach(perkId => {
-               const active = perks[perkId].active;
-               syncToggle('mod-perk-' + perkId + '-toggle', active);
-               document.getElementById('mod-row-perk-' + perkId).classList.toggle('active-mod', active);
-           });
-           syncToggle('mod-unlimitedammo-toggle', modState.unlimitedAmmo);
-           document.getElementById('mod-row-unlimitedammo').classList.toggle('active-mod', modState.unlimitedAmmo);
-       };
 
        // Open / close buttons
        document.getElementById('mod-menu-button').addEventListener('click', openModMenu);
