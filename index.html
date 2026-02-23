@@ -951,6 +951,192 @@
            display: none;
        }
        .mod-status-text.visible { display: block; }
+
+       /* ============================
+          HUD LAYOUT EDITOR
+          ============================ */
+       #hud-settings-button {
+           position: absolute;
+           top: max(8px, 1vh);
+           left: 50%;
+           transform: translateX(calc(-200% - 12px));
+           width: var(--btn-md);
+           height: var(--btn-md);
+           background: rgba(0,0,0,0.85);
+           border: 2px solid #00ccff;
+           border-radius: 10px;
+           pointer-events: all;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           cursor: pointer;
+           user-select: none;
+           font-size: clamp(8px, 1.2vw, 11px);
+           font-weight: bold;
+           color: #00ccff;
+           text-shadow: 0 0 8px #00ccff;
+           box-shadow: 0 0 12px rgba(0,204,255,0.4);
+           z-index: 25;
+           transition: all 0.2s;
+       }
+       #hud-settings-button:active { opacity: 0.8; }
+       #hud-settings-icon { font-size: clamp(16px, 3vw, 22px); margin-bottom: 2px; }
+
+       /* The full-screen editor overlay */
+       #hud-editor-overlay {
+           position: fixed;
+           top: 0; left: 0; width: 100%; height: 100%;
+           z-index: 300;
+           display: none;
+           pointer-events: none;
+       }
+       #hud-editor-overlay.open { display: block; }
+
+       /* Dim background strip at top for the control panel */
+       #hud-editor-panel {
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+           width: 260px;
+           background: rgba(10,10,20,0.96);
+           border: 2px solid #00ccff;
+           border-radius: 14px;
+           box-shadow: 0 0 24px rgba(0,204,255,0.35);
+           padding: 14px 16px 12px;
+           display: flex;
+           flex-direction: column;
+           gap: 10px;
+           pointer-events: all;
+           z-index: 301;
+           cursor: default;
+       }
+       /* draggable window header */
+       #hud-editor-panel-header {
+           display: flex;
+           align-items: center;
+           justify-content: space-between;
+           cursor: grab;
+           margin-bottom: 2px;
+       }
+       #hud-editor-panel-header:active { cursor: grabbing; }
+       #hud-editor-title {
+           color: #00ccff;
+           font-size: 13px;
+           font-weight: bold;
+           text-shadow: 0 0 8px #00ccff;
+           user-select: none;
+       }
+       #hud-editor-drag-hint {
+           color: #555;
+           font-size: 10px;
+           user-select: none;
+       }
+       #hud-editor-element-select {
+           background: rgba(0,0,0,0.8);
+           border: 1.5px solid #00ccff;
+           border-radius: 8px;
+           color: #fff;
+           font-size: 12px;
+           padding: 5px 8px;
+           pointer-events: all;
+           min-width: 130px;
+           flex-shrink: 0;
+       }
+       .hud-editor-label {
+           color: #888;
+           font-size: 10px;
+           white-space: nowrap;
+           margin-bottom: 2px;
+       }
+       .hud-editor-slider-group {
+           display: flex;
+           flex-direction: column;
+           gap: 3px;
+       }
+       .hud-editor-slider-row {
+           display: flex;
+           align-items: center;
+           gap: 8px;
+       }
+       .hud-editor-slider {
+           -webkit-appearance: none;
+           appearance: none;
+           flex: 1;
+           height: 4px;
+           background: #333;
+           border-radius: 2px;
+           outline: none;
+           pointer-events: all;
+       }
+       .hud-editor-slider::-webkit-slider-thumb {
+           -webkit-appearance: none;
+           width: 16px; height: 16px;
+           border-radius: 50%;
+           background: #00ccff;
+           cursor: pointer;
+           box-shadow: 0 0 6px rgba(0,204,255,0.6);
+       }
+       .hud-editor-val {
+           color: #00ccff;
+           font-size: 11px;
+           min-width: 34px;
+           text-align: right;
+       }
+       #hud-editor-btn-row {
+           display: flex;
+           gap: 6px;
+           margin-top: 2px;
+       }
+       #hud-editor-reset-btn, #hud-editor-close-btn, #hud-editor-reset-all-btn {
+           flex: 1;
+           padding: 7px 4px;
+           border: none;
+           border-radius: 8px;
+           font-size: 10px;
+           font-weight: bold;
+           cursor: pointer;
+           pointer-events: all;
+           white-space: nowrap;
+       }
+       #hud-editor-reset-btn     { background: #444; color: #fff; }
+       #hud-editor-reset-all-btn { background: #883300; color: #fff; }
+       #hud-editor-close-btn     { background: linear-gradient(90deg,#006688,#004466); color: #00ccff; }
+       #hud-editor-divider {
+           height: 1px;
+           background: rgba(0,204,255,0.2);
+           margin: 0 -4px;
+       }
+
+       /* Drag handles that appear over each HUD element in edit mode */
+       .hud-drag-handle {
+           position: absolute;
+           box-sizing: border-box;
+           border: 2px dashed rgba(0,204,255,0.7);
+           border-radius: 8px;
+           cursor: move;
+           pointer-events: all;
+           z-index: 302;
+           transition: border-color 0.15s;
+           touch-action: none;
+       }
+       .hud-drag-handle.selected {
+           border-color: #00ccff;
+           box-shadow: 0 0 0 2px rgba(0,204,255,0.35);
+       }
+       .hud-drag-handle-label {
+           position: absolute;
+           top: -18px;
+           left: 0;
+           background: rgba(0,0,0,0.75);
+           color: #00ccff;
+           font-size: 9px;
+           padding: 1px 5px;
+           border-radius: 4px;
+           white-space: nowrap;
+           pointer-events: none;
+       }
    </style>
 </head>
 <body>
@@ -1018,6 +1204,46 @@
 
        <div id="auto-aim-ring"></div>
 
+
+       <!-- HUD LAYOUT SETTINGS BUTTON -->
+       <div id="hud-settings-button">
+           <span id="hud-settings-icon">🎛️</span>
+           <span>HUD</span>
+       </div>
+
+       <!-- HUD EDITOR OVERLAY -->
+       <div id="hud-editor-overlay">
+           <div id="hud-editor-panel">
+               <div id="hud-editor-panel-header">
+                   <span id="hud-editor-title">🎛️ HUD EDITOR</span>
+                   <span id="hud-editor-drag-hint">✥ drag</span>
+               </div>
+               <div id="hud-editor-divider"></div>
+               <select id="hud-editor-element-select">
+                   <option value="">— Select Element —</option>
+               </select>
+               <div class="hud-editor-slider-group">
+                   <span class="hud-editor-label">SIZE</span>
+                   <div class="hud-editor-slider-row">
+                       <input type="range" class="hud-editor-slider" id="hud-editor-size" min="30" max="200" value="100">
+                       <span class="hud-editor-val" id="hud-editor-size-val">100%</span>
+                   </div>
+               </div>
+               <div class="hud-editor-slider-group">
+                   <span class="hud-editor-label">OPACITY</span>
+                   <div class="hud-editor-slider-row">
+                       <input type="range" class="hud-editor-slider" id="hud-editor-opacity" min="10" max="100" value="100">
+                       <span class="hud-editor-val" id="hud-editor-opacity-val">100%</span>
+                   </div>
+               </div>
+               <div id="hud-editor-divider"></div>
+               <div id="hud-editor-btn-row">
+                   <button id="hud-editor-reset-btn">↺ This</button>
+                   <button id="hud-editor-reset-all-btn">↺ All</button>
+                   <button id="hud-editor-close-btn">✔ Done</button>
+               </div>
+           </div>
+       </div>
        <!-- MOD MENU BUTTON -->
        <div id="mod-menu-button">⚙️ MODS</div>
 
@@ -1032,11 +1258,11 @@
                <div class="mod-row" id="mod-row-zombielimit">
                    <div>
                        <div class="mod-label">Max Zombies on Map</div>
-                       <div class="mod-desc">Current limit: <span id="mod-zombie-limit-display">20</span></div>
+                       <div class="mod-desc">Current limit: <span id="mod-zombie-limit-display">5</span></div>
                        <div class="mod-status-text" id="mod-zombielimit-status">✔ Applied!</div>
                    </div>
                    <div class="mod-input-group">
-                       <input class="mod-input" id="mod-zombie-limit-input" type="number" min="1" max="100" value="20">
+                       <input class="mod-input" id="mod-zombie-limit-input" type="number" min="1" max="100" value="5">
                        <button class="mod-apply-btn" id="mod-zombie-limit-apply">SET</button>
                    </div>
                </div>
@@ -3276,7 +3502,7 @@
            return gameState.wave % 5 === 0;
        }
 
-       const MAX_ZOMBIES_ON_GROUND = 20;
+       const MAX_ZOMBIES_ON_GROUND = 5;
 
        function spawnOneRegularZombie() {
            if (gameState.isGameOver) return;
@@ -3453,6 +3679,7 @@
 
        const joystickArea = document.getElementById('joystick-area');
        const joystickStick = document.getElementById('joystick-stick');
+       const joystickBase  = document.getElementById('joystick-base');
        let joystickCenter = { x: 0, y: 0 };
        let joystickTouchId = null;
 
@@ -3465,12 +3692,29 @@
        }
        updateJoystickCenter();
 
+       // Double-tap joystick = 180 degree turn
+       let _joystickLastTap = 0;
        joystickArea.addEventListener('touchstart', (e) => {
            e.preventDefault();
            e.stopPropagation();
            moveState.joystickActive = true;
            joystickTouchId = e.touches[0].identifier;
            updateJoystickCenter();
+
+           const now = Date.now();
+           if (now - _joystickLastTap < 300) {
+               // Double tap — snap 180 degrees
+               lookState.rotationY += Math.PI;
+               camera.rotation.y = lookState.rotationY;
+               // Brief flash on joystick to confirm
+               joystickBase.style.background = 'radial-gradient(circle, rgba(0,200,255,0.7), rgba(0,100,200,0.5))';
+               setTimeout(() => {
+                   joystickBase.style.background = '';
+               }, 200);
+               _joystickLastTap = 0;
+           } else {
+               _joystickLastTap = now;
+           }
        }, { passive: false });
 
        joystickArea.addEventListener('touchmove', (e) => {
@@ -4329,7 +4573,13 @@
 
        // Aim height scaled for boss (2.5x bigger) vs regular labubu
        function aimHeight(zombie) {
-           return zombie.isSuperBoss ? 3.0 : (zombie.isBoss ? 1.5 : 0.7);
+           // Use actual model height if available (Labubu model), aim at ~55% up = chest
+           if (zombie.modelBaseY && zombie.modelBaseY > 0) {
+               return zombie.modelBaseY * 0.55;
+           }
+           // Procedural fallback: body centre geometry = 1.2 * sizeMult
+           const s = zombie.sizeMult || 1;
+           return 1.2 * s;
        }
 
        // Pixel distance from screen centre to zombie's torso projection
@@ -4355,11 +4605,13 @@
            return hits.length > 0;
        }
 
-       // Only find a zombie whose torso projects inside the crosshair ring — no global fallback
+       // Find a zombie the moment its body TOUCHES the blue ring edge
        function findZombieInCrosshair() {
            let best = null;
            let bestDist = Infinity;
            const camDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+           const halfW = window.innerWidth  / 2;
+           const halfH = window.innerHeight / 2;
 
            for (const z of zombies) {
                if (z.health <= 0) continue;
@@ -4377,8 +4629,20 @@
                // Must be visible — no wall in the way
                if (wallBlocksLOS(z)) continue;
 
+               // Distance from screen centre to zombie torso projection
                const sDist = screenDistToZombie(z);
-               if (sDist <= AUTO_AIM_RING_RADIUS_PX && sDist < bestDist) {
+
+               // Estimate zombie's screen radius so we lock on the moment
+               // its body EDGE touches the ring, not just when its centre enters
+               const dist3D = z.group.position.distanceTo(camera.position);
+               const s = z.sizeMult || 1;
+               const bodyRadius3D = 0.65 * s;
+               // Project one world-unit at that depth to get px-per-unit scale
+               const scaleApprox = halfH / Math.max(dist3D * Math.tan(camera.fov * Math.PI / 360), 0.001);
+               const zombieScreenRadius = bodyRadius3D * scaleApprox;
+
+               // Lock on when zombie body edge is at or inside the ring edge
+               if ((sDist - zombieScreenRadius) <= AUTO_AIM_RING_RADIUS_PX && sDist < bestDist) {
                    bestDist = sDist;
                    best = z;
                }
@@ -4876,6 +5140,353 @@
        gameState.isNight = false;
        
        initGame();
+       // ============================================================
+       //  HUD LAYOUT EDITOR
+       // ============================================================
+       (function() {
+
+           // All editable HUD elements: id -> display label
+           const HUD_ELEMENTS = {
+               'stats':               '❤️ Stats Panel',
+               'wave-info':           '🌊 Wave Info',
+               'minimap':             '🗺️ Minimap',
+               'shoot-button':        '🔴 Fire Button',
+               'reload-button':       '🟡 Reload Button',
+               'jump-button':         '🟢 Jump Button',
+               'weapon-cycle-button': '🔫 Weapon Switch',
+               'weapon-hint':         '💬 Weapon Hint',
+               'joystick-area':       '🕹️ Joystick',
+               'third-person-button': '📷 3rd Person',
+               'mod-menu-button':     '⚙️ Mod Menu',
+               'hud-settings-button': '🎛️ HUD Settings',
+               'shop-button':         '🛒 Shop',
+               'coins-display':       '💰 Coins',
+               'active-perks-hud':    '✨ Active Perks',
+               'streak-display':      '🔥 Streak',
+               'fps-counter':         '📊 FPS Counter',
+           };
+
+           const STORAGE_KEY = 'hudLayoutV2';
+           let hudState = {};          // { id: {x, y, scale, opacity} }
+           let selectedId = null;
+           let dragHandle = null;      // currently dragged overlay div
+           let dragOffX = 0, dragOffY = 0;
+           let handles = {};           // id -> overlay div
+
+           // Load saved state
+           function loadState() {
+               try {
+                   const raw = localStorage.getItem(STORAGE_KEY);
+                   hudState = raw ? JSON.parse(raw) : {};
+               } catch(e) { hudState = {}; }
+           }
+
+           function saveState() {
+               try { localStorage.setItem(STORAGE_KEY, JSON.stringify(hudState)); } catch(e) {}
+           }
+
+           function getDefault(id) {
+               const el = document.getElementById(id);
+               if (!el) return null;
+               const r = el.getBoundingClientRect();
+               return { x: r.left, y: r.top, scale: 1, opacity: 1 };
+           }
+
+           function getState(id) {
+               if (!hudState[id]) {
+                   const d = getDefault(id);
+                   if (!d) return null;
+                   hudState[id] = d;
+               }
+               return hudState[id];
+           }
+
+           // Apply stored position/scale/opacity to a real element
+           function applyState(id) {
+               const el = document.getElementById(id);
+               const s = hudState[id];
+               if (!el || !s) return;
+               el.style.position  = 'fixed';
+               el.style.left      = s.x + 'px';
+               el.style.top       = s.y + 'px';
+               el.style.right     = 'unset';
+               el.style.bottom    = 'unset';
+               el.style.transform = `scale(${s.scale})`;
+               el.style.transformOrigin = 'top left';
+               el.style.opacity   = s.opacity;
+           }
+
+           function applyAllStates() {
+               Object.keys(hudState).forEach(applyState);
+           }
+
+           // Build overlay drag handles for every element
+           function buildHandles() {
+               // Remove old
+               Object.values(handles).forEach(h => h.remove());
+               handles = {};
+
+               Object.entries(HUD_ELEMENTS).forEach(([id, label]) => {
+                   const el = document.getElementById(id);
+                   if (!el) return;
+
+                   const h = document.createElement('div');
+                   h.className = 'hud-drag-handle';
+                   h.dataset.id = id;
+
+                   const lbl = document.createElement('div');
+                   lbl.className = 'hud-drag-handle-label';
+                   lbl.textContent = label;
+                   h.appendChild(lbl);
+
+                   document.getElementById('hud-editor-overlay').appendChild(h);
+                   handles[id] = h;
+
+                   // Click to select
+                   h.addEventListener('pointerdown', e => {
+                       e.stopPropagation();
+                       selectElement(id);
+                       startDrag(e, id);
+                   });
+               });
+
+               positionHandles();
+           }
+
+           function positionHandles() {
+               Object.entries(handles).forEach(([id, h]) => {
+                   const el = document.getElementById(id);
+                   if (!el) return;
+                   const r = el.getBoundingClientRect();
+                   h.style.left   = r.left + 'px';
+                   h.style.top    = r.top  + 'px';
+                   h.style.width  = r.width  + 'px';
+                   h.style.height = r.height + 'px';
+               });
+           }
+
+           function selectElement(id) {
+               selectedId = id;
+               // highlight
+               Object.values(handles).forEach(h => h.classList.remove('selected'));
+               if (handles[id]) handles[id].classList.add('selected');
+
+               // sync dropdown
+               const sel = document.getElementById('hud-editor-element-select');
+               sel.value = id;
+
+               // sync sliders
+               const s = getState(id);
+               if (s) {
+                   const sizeSlider = document.getElementById('hud-editor-size');
+                   sizeSlider.value = Math.round(s.scale * 100);
+                   document.getElementById('hud-editor-size-val').textContent = sizeSlider.value + '%';
+                   const opSlider = document.getElementById('hud-editor-opacity');
+                   opSlider.value = Math.round(s.opacity * 100);
+                   document.getElementById('hud-editor-opacity-val').textContent = opSlider.value + '%';
+               }
+           }
+
+           // ── DRAG ──────────────────────────────────────────────
+           function startDrag(e, id) {
+               dragHandle = handles[id];
+               const r = dragHandle.getBoundingClientRect();
+               const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+               const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+               dragOffX = clientX - r.left;
+               dragOffY = clientY - r.top;
+               dragHandle.setPointerCapture && dragHandle.setPointerCapture(e.pointerId);
+           }
+
+           document.addEventListener('pointermove', e => {
+               if (!dragHandle || !selectedId) return;
+               e.preventDefault();
+               const clientX = e.clientX;
+               const clientY = e.clientY;
+               const nx = clientX - dragOffX;
+               const ny = clientY - dragOffY;
+
+               dragHandle.style.left = nx + 'px';
+               dragHandle.style.top  = ny + 'px';
+
+               const s = getState(selectedId);
+               if (s) { s.x = nx; s.y = ny; }
+               applyState(selectedId);
+               saveState();
+           }, { passive: false });
+
+           document.addEventListener('pointerup', () => { dragHandle = null; });
+
+           // ── OPEN / CLOSE ──────────────────────────────────────
+           function openEditor() {
+               loadState();
+               applyAllStates();
+
+               // Populate dropdown
+               const sel = document.getElementById('hud-editor-element-select');
+               sel.innerHTML = '<option value="">— Select Element —</option>';
+               Object.entries(HUD_ELEMENTS).forEach(([id, label]) => {
+                   const opt = document.createElement('option');
+                   opt.value = id; opt.textContent = label;
+                   sel.appendChild(opt);
+               });
+
+               const overlay = document.getElementById('hud-editor-overlay');
+               overlay.classList.add('open');
+               overlay.style.pointerEvents = 'all';
+
+               // Pause the game loop exactly like shop/mod menu does
+               if (typeof shopOpen !== 'undefined') shopOpen = true;
+
+               // Short delay so elements have rendered positions
+               setTimeout(buildHandles, 50);
+           }
+
+           function closeEditor() {
+               const overlay = document.getElementById('hud-editor-overlay');
+               overlay.classList.remove('open');
+               overlay.style.pointerEvents = 'none';
+               Object.values(handles).forEach(h => h.remove());
+               handles = {};
+
+               // Resume the game loop
+               if (typeof shopOpen !== 'undefined') shopOpen = false;
+
+               // Save layout and show confirmation
+               saveState();
+               showSaveConfirm();
+           }
+
+           // ── CONTROLS ─────────────────────────────────────────
+           // Show a brief "Layout Saved" toast when closing
+           function showSaveConfirm() {
+               let toast = document.getElementById('hud-save-toast');
+               if (!toast) {
+                   toast = document.createElement('div');
+                   toast.id = 'hud-save-toast';
+                   toast.style.cssText = [
+                       'position:fixed','top:50%','left:50%',
+                       'transform:translate(-50%,-50%)',
+                       'background:rgba(0,20,30,0.95)',
+                       'border:2px solid #00ccff',
+                       'border-radius:12px',
+                       'padding:14px 28px',
+                       'color:#00ccff',
+                       'font-size:16px',
+                       'font-weight:bold',
+                       'text-shadow:0 0 10px #00ccff',
+                       'box-shadow:0 0 20px rgba(0,204,255,0.4)',
+                       'z-index:400',
+                       'pointer-events:none',
+                       'opacity:0',
+                       'transition:opacity 0.3s'
+                   ].join(';');
+                   toast.textContent = '✔ HUD Layout Saved';
+                   document.body.appendChild(toast);
+               }
+               toast.style.opacity = '1';
+               clearTimeout(toast._t);
+               toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 1800);
+           }
+
+           // Make the editor window itself draggable
+           (function() {
+               const panel = document.getElementById('hud-editor-panel');
+               const header = document.getElementById('hud-editor-panel-header');
+               let pdx=0, pdy=0, draggingPanel=false;
+               header.addEventListener('pointerdown', e => {
+                   draggingPanel = true;
+                   const r = panel.getBoundingClientRect();
+                   pdx = e.clientX - r.left;
+                   pdy = e.clientY - r.top;
+                   header.setPointerCapture(e.pointerId);
+                   e.stopPropagation();
+               });
+               header.addEventListener('pointermove', e => {
+                   if (!draggingPanel) return;
+                   panel.style.transform = 'none';
+                   panel.style.left = (e.clientX - pdx) + 'px';
+                   panel.style.top  = (e.clientY - pdy) + 'px';
+               });
+               header.addEventListener('pointerup', () => { draggingPanel = false; });
+           })();
+
+           document.getElementById('hud-settings-button').addEventListener('click', openEditor);
+           document.getElementById('hud-editor-close-btn').addEventListener('click', closeEditor);
+
+           document.getElementById('hud-editor-element-select').addEventListener('change', function() {
+               if (this.value) selectElement(this.value);
+           });
+
+           document.getElementById('hud-editor-size').addEventListener('input', function() {
+               document.getElementById('hud-editor-size-val').textContent = this.value + '%';
+               if (!selectedId) return;
+               const s = getState(selectedId);
+               if (!s) return;
+               s.scale = parseInt(this.value) / 100;
+               applyState(selectedId);
+               // reposition handle to match new size
+               setTimeout(() => positionHandles(), 10);
+               saveState();
+           });
+
+           document.getElementById('hud-editor-opacity').addEventListener('input', function() {
+               document.getElementById('hud-editor-opacity-val').textContent = this.value + '%';
+               if (!selectedId) return;
+               const s = getState(selectedId);
+               if (!s) return;
+               s.opacity = parseInt(this.value) / 100;
+               applyState(selectedId);
+               saveState();
+           });
+
+           document.getElementById('hud-editor-reset-btn').addEventListener('click', () => {
+               if (!selectedId) return;
+               delete hudState[selectedId];
+               saveState();
+               const el = document.getElementById(selectedId);
+               if (el) {
+                   el.style.position = '';
+                   el.style.left = '';
+                   el.style.top = '';
+                   el.style.right = '';
+                   el.style.bottom = '';
+                   el.style.transform = '';
+                   el.style.transformOrigin = '';
+                   el.style.opacity = '';
+               }
+               setTimeout(() => {
+                   positionHandles();
+                   selectElement(selectedId);
+               }, 30);
+           });
+
+           document.getElementById('hud-editor-reset-all-btn').addEventListener('click', () => {
+               hudState = {};
+               saveState();
+               Object.keys(HUD_ELEMENTS).forEach(id => {
+                   const el = document.getElementById(id);
+                   if (!el) return;
+                   el.style.position = '';
+                   el.style.left = '';
+                   el.style.top = '';
+                   el.style.right = '';
+                   el.style.bottom = '';
+                   el.style.transform = '';
+                   el.style.transformOrigin = '';
+                   el.style.opacity = '';
+               });
+               setTimeout(buildHandles, 30);
+           });
+
+           // Apply saved layout on load
+           window.addEventListener('load', () => {
+               loadState();
+               applyAllStates();
+           });
+
+       })();
+
    </script>
 </body>
 </html>
