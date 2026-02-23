@@ -1695,6 +1695,53 @@
            });
        }
 
+       // GOLEM BOSS MODEL (GLB)
+       // ==========================================
+       const golemModelUrl = 'https://raw.githubusercontent.com/MrDemoManHAX/LabubuZombies3DGame/main/golem.glb';
+       let golemTemplate = null;
+       let golemLoaded = false;
+       let golemBaseHeight = 0;
+
+       function loadGolemModel() {
+           return new Promise((resolve) => {
+               gltfLoader.load(
+                   golemModelUrl,
+                   (gltf) => {
+                       golemTemplate = gltf.scene;
+                       golemTemplate.traverse((child) => {
+                           if (child.isMesh) {
+                               child.castShadow = true;
+                               child.receiveShadow = true;
+                               if (child.material) {
+                                   const materials = Array.isArray(child.material) ? child.material : [child.material];
+                                   materials.forEach(mat => {
+                                       mat.transparent = false;
+                                       mat.opacity = 1;
+                                       mat.alphaTest = 0;
+                                       mat.depthWrite = true;
+                                       mat.depthTest = true;
+                                       mat.side = THREE.FrontSide;
+                                       mat.needsUpdate = true;
+                                   });
+                               }
+                           }
+                       });
+                       golemTemplate.updateMatrixWorld(true);
+                       const box = new THREE.Box3().setFromObject(golemTemplate);
+                       golemBaseHeight = -box.min.y;
+                       golemLoaded = true;
+                       console.log('Golem boss model loaded successfully');
+                       resolve();
+                   },
+                   undefined,
+                   (error) => {
+                       console.error('Error loading golem model:', error);
+                       resolve();
+                   }
+               );
+           });
+       }
+
        // ==========================================
        // DEEP CLONE FUNCTION FOR GLTF
        // ==========================================
@@ -2887,40 +2934,41 @@
                const sizeMult = isSuperBoss ? CONFIG.SUPER_BOSS_SIZE_MULT : (isBoss ? CONFIG.BOSS_SIZE_MULT : 1);
                this.sizeMult = sizeMult;
 
-               if (labubuLoaded && labubuTemplate) {
-                   const model = deepCloneGLTF(labubuTemplate);
+               const usesGolem = (isBoss || isSuperBoss) && golemLoaded && golemTemplate;
+               const activeTemplate = usesGolem ? golemTemplate : labubuTemplate;
+               const activeBaseHeight = usesGolem ? golemBaseHeight : labubuBaseHeight;
+               const activeLoaded = usesGolem ? golemLoaded : labubuLoaded;
+
+               if (activeLoaded && activeTemplate) {
+                   const model = deepCloneGLTF(activeTemplate);
                    model.scale.set(sizeMult, sizeMult, sizeMult);
                    model.rotation.y = Math.PI;
-                   this.modelBaseY = labubuBaseHeight * sizeMult;
+                   this.modelBaseY = activeBaseHeight * sizeMult;
                    model.position.y = this.modelBaseY;
 
-                   // Super boss: keep original model colours fully visible, pink glow comes from the point light + overlay only
+                   // Boss/SuperBoss: restore original model colours, just brighten with emissive
                    if (isSuperBoss) {
                        model.traverse((child) => {
+                           if (child.isMesh && child.material) {
+                               const mats = Array.isArray(child.material) ? child.material : [child.material];
+                               mats.forEach(m => {
+                                   m.color.setHex(0xffffff);
+                                   if (m.emissive) m.emissive.setHex(0xffffff);
+                                   m.emissiveIntensity = 0.5;
+                                   m.needsUpdate = true;
+                               });
+                           }
                            child.userData.zombie = this;
                        });
-                       // Semi-transparent pink overlay sphere — sits over the model giving it a pink tint
-                       // without replacing the original texture
-                       const overlayGeo = new THREE.SphereGeometry(0.65 * sizeMult, 16, 16);
-                       const overlayMat = new THREE.MeshBasicMaterial({
-                           color: 0xff00ff,
-                           transparent: true,
-                           opacity: 0.22,
-                           depthWrite: false,
-                           side: THREE.BackSide
-                       });
-                       const overlayMesh = new THREE.Mesh(overlayGeo, overlayMat);
-                       overlayMesh.position.y = 1.2 * sizeMult;
-                       overlayMesh.userData.isPinkOverlay = true;
-                       this.group.add(overlayMesh);
                    } else if (isBoss) {
                        model.traverse((child) => {
                            if (child.isMesh && child.material) {
                                const mats = Array.isArray(child.material) ? child.material : [child.material];
                                mats.forEach(m => {
-                                   m.color.setHex(0xff69b4);
-                                   if (m.emissive) m.emissive.setHex(0xff1493);
-                                   m.emissiveIntensity = 0.8;
+                                   m.color.setHex(0xffffff);
+                                   if (m.emissive) m.emissive.setHex(0xffffff);
+                                   m.emissiveIntensity = 0.4;
+                                   m.needsUpdate = true;
                                });
                            }
                            child.userData.zombie = this;
@@ -4202,6 +4250,7 @@
            console.log('Loading assets...');
            
            await loadLabubuModel();
+           await loadGolemModel();
            
            document.getElementById('loading-screen').style.display = 'none';
            
