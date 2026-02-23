@@ -749,6 +749,190 @@
            0%, 100% { opacity: 1; }
            50% { opacity: 0.5; }
        }
+
+       /* ============================
+          MOD MENU STYLES
+          ============================ */
+       #mod-menu-button {
+           position: absolute;
+           top: 155px;
+           left: 50%;
+           transform: translateX(-50%);
+           width: 80px;
+           height: 40px;
+           background: rgba(0,0,0,0.85);
+           border: 2px solid #ff00ff;
+           border-radius: 10px;
+           pointer-events: all;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           cursor: pointer;
+           user-select: none;
+           font-size: 10px;
+           font-weight: bold;
+           color: #ff00ff;
+           text-shadow: 0 0 8px #ff00ff;
+           box-shadow: 0 0 12px rgba(255,0,255,0.4);
+           z-index: 25;
+           transition: all 0.2s;
+       }
+       #mod-menu-button:active { transform: translateX(-50%) scale(0.95); }
+
+       #mod-menu-overlay {
+           position: absolute;
+           top: 0; left: 0; width: 100%; height: 100%;
+           background: rgba(0,0,0,0.93);
+           z-index: 160;
+           display: none;
+           flex-direction: column;
+           align-items: center;
+           justify-content: flex-start;
+           padding-top: 20px;
+           pointer-events: all;
+           overflow-y: auto;
+       }
+       #mod-menu-overlay.open { display: flex; }
+
+       #mod-menu-title {
+           font-size: 28px;
+           color: #ff00ff;
+           text-shadow: 0 0 20px #ff00ff;
+           margin-bottom: 4px;
+           font-weight: bold;
+           letter-spacing: 2px;
+       }
+       #mod-menu-subtitle {
+           font-size: 11px;
+           color: #888;
+           margin-bottom: 16px;
+       }
+
+       .mod-section {
+           width: 92%;
+           max-width: 420px;
+           margin-bottom: 8px;
+       }
+       .mod-section-title {
+           font-size: 11px;
+           color: #ff00ff;
+           letter-spacing: 2px;
+           margin-bottom: 6px;
+           text-transform: uppercase;
+           opacity: 0.7;
+       }
+
+       .mod-row {
+           background: rgba(255,255,255,0.05);
+           border: 1.5px solid #333;
+           border-radius: 12px;
+           padding: 10px 14px;
+           display: flex;
+           align-items: center;
+           justify-content: space-between;
+           margin-bottom: 6px;
+           transition: border-color 0.2s;
+       }
+       .mod-row.active-mod { border-color: #ff00ff; background: rgba(255,0,255,0.07); }
+
+       .mod-label {
+           color: #fff;
+           font-size: 13px;
+           font-weight: bold;
+           margin-bottom: 2px;
+       }
+       .mod-desc {
+           color: #888;
+           font-size: 10px;
+       }
+
+       .mod-input-group {
+           display: flex;
+           align-items: center;
+           gap: 6px;
+       }
+       .mod-input {
+           width: 70px;
+           background: rgba(0,0,0,0.6);
+           border: 1.5px solid #555;
+           border-radius: 8px;
+           color: #fff;
+           font-size: 14px;
+           font-weight: bold;
+           padding: 5px 8px;
+           text-align: center;
+           outline: none;
+           font-family: 'Arial Black', sans-serif;
+       }
+       .mod-input:focus { border-color: #ff00ff; box-shadow: 0 0 8px rgba(255,0,255,0.4); }
+
+       .mod-apply-btn {
+           background: linear-gradient(90deg, #880088, #aa00aa);
+           border: none;
+           border-radius: 8px;
+           color: #fff;
+           font-size: 11px;
+           font-weight: bold;
+           padding: 6px 12px;
+           cursor: pointer;
+           pointer-events: all;
+           white-space: nowrap;
+       }
+       .mod-apply-btn:active { transform: scale(0.95); }
+
+       .mod-toggle {
+           width: 52px;
+           height: 28px;
+           background: #333;
+           border-radius: 14px;
+           position: relative;
+           cursor: pointer;
+           border: 2px solid #555;
+           transition: all 0.25s;
+           flex-shrink: 0;
+       }
+       .mod-toggle::after {
+           content: '';
+           position: absolute;
+           width: 20px;
+           height: 20px;
+           background: #888;
+           border-radius: 50%;
+           top: 2px;
+           left: 2px;
+           transition: all 0.25s;
+       }
+       .mod-toggle.on {
+           background: rgba(255,0,255,0.3);
+           border-color: #ff00ff;
+           box-shadow: 0 0 10px rgba(255,0,255,0.5);
+       }
+       .mod-toggle.on::after {
+           left: 26px;
+           background: #ff00ff;
+       }
+
+       #mod-close-btn {
+           margin-top: 12px;
+           margin-bottom: 24px;
+           padding: 12px 48px;
+           font-size: 16px;
+           background: linear-gradient(90deg, #880000, #660000);
+           border: none;
+           border-radius: 12px;
+           color: #fff;
+           cursor: pointer;
+           font-weight: bold;
+           pointer-events: all;
+       }
+
+       .mod-status-text {
+           font-size: 10px;
+           color: #00ffcc;
+           margin-top: 2px;
+           display: none;
+       }
+       .mod-status-text.visible { display: block; }
    </style>
 </head>
 <body>
@@ -819,6 +1003,90 @@
            <span>AUTO AIM</span>
        </div>
        <div id="auto-aim-ring"></div>
+
+       <!-- MOD MENU BUTTON -->
+       <div id="mod-menu-button">⚙️ MODS</div>
+
+       <!-- MOD MENU OVERLAY -->
+       <div id="mod-menu-overlay">
+           <div id="mod-menu-title">⚙️ MOD MENU</div>
+           <div id="mod-menu-subtitle">Changes apply instantly to current game</div>
+
+           <!-- PERFORMANCE -->
+           <div class="mod-section">
+               <div class="mod-section-title">⚡ Performance</div>
+               <div class="mod-row" id="mod-row-zombielimit">
+                   <div>
+                       <div class="mod-label">Max Zombies on Map</div>
+                       <div class="mod-desc">Current limit: <span id="mod-zombie-limit-display">20</span></div>
+                       <div class="mod-status-text" id="mod-zombielimit-status">✔ Applied!</div>
+                   </div>
+                   <div class="mod-input-group">
+                       <input class="mod-input" id="mod-zombie-limit-input" type="number" min="1" max="100" value="20">
+                       <button class="mod-apply-btn" id="mod-zombie-limit-apply">SET</button>
+                   </div>
+               </div>
+           </div>
+
+           <!-- PLAYER STATS -->
+           <div class="mod-section">
+               <div class="mod-section-title">🧍 Player Stats</div>
+               <div class="mod-row" id="mod-row-health">
+                   <div>
+                       <div class="mod-label">Set Player Health</div>
+                       <div class="mod-desc">Current: <span id="mod-health-display">1000</span> / <span id="mod-maxhealth-display">1000</span></div>
+                       <div class="mod-status-text" id="mod-health-status">✔ Applied!</div>
+                   </div>
+                   <div class="mod-input-group">
+                       <input class="mod-input" id="mod-health-input" type="number" min="1" max="99999" value="1000">
+                       <button class="mod-apply-btn" id="mod-health-apply">SET</button>
+                   </div>
+               </div>
+               <div class="mod-row" id="mod-row-maxammo">
+                   <div>
+                       <div class="mod-label">Set Max Reserve Ammo</div>
+                       <div class="mod-desc">Sets total ammo for current weapon</div>
+                       <div class="mod-status-text" id="mod-maxammo-status">✔ Applied!</div>
+                   </div>
+                   <div class="mod-input-group">
+                       <input class="mod-input" id="mod-maxammo-input" type="number" min="0" max="99999" value="999">
+                       <button class="mod-apply-btn" id="mod-maxammo-apply">SET</button>
+                   </div>
+               </div>
+               <div class="mod-row" id="mod-row-speed">
+                   <div>
+                       <div class="mod-label">Set Player Speed</div>
+                       <div class="mod-desc">Default is 0.1 — try 0.05–0.4</div>
+                       <div class="mod-status-text" id="mod-speed-status">✔ Applied!</div>
+                   </div>
+                   <div class="mod-input-group">
+                       <input class="mod-input" id="mod-speed-input" type="number" min="0.01" max="2" step="0.05" value="0.1">
+                       <button class="mod-apply-btn" id="mod-speed-apply">SET</button>
+                   </div>
+               </div>
+           </div>
+
+           <!-- TOGGLES -->
+           <div class="mod-section">
+               <div class="mod-section-title">🔀 Toggles</div>
+               <div class="mod-row" id="mod-row-allperks">
+                   <div>
+                       <div class="mod-label">Activate All Perks</div>
+                       <div class="mod-desc">Enables all shop perks instantly (no cost)</div>
+                   </div>
+                   <div class="mod-toggle" id="mod-allperks-toggle"></div>
+               </div>
+               <div class="mod-row" id="mod-row-godmode">
+                   <div>
+                       <div class="mod-label">God Mode</div>
+                       <div class="mod-desc">Immune to all zombie damage</div>
+                   </div>
+                   <div class="mod-toggle" id="mod-godmode-toggle"></div>
+               </div>
+           </div>
+
+           <button id="mod-close-btn">▶ RESUME GAME</button>
+       </div>
 
        <div id="third-person-button">
            <span id="third-person-icon">📷</span>
@@ -2867,8 +3135,9 @@
                    checkWaveComplete();
                } else {
                    gameState.regularZombiesKilled++;
-                   // Respawn a new zombie if there are still more to spawn this wave
-                   if (gameState.regularZombiesSpawned < gameState.regularZombiesTotal) {
+                   // Respawn a new zombie if there are still more to spawn this wave AND under limit
+                   const _curLimit = window._modZombieLimit !== undefined ? window._modZombieLimit : MAX_ZOMBIES_ON_GROUND;
+                   if (gameState.regularZombiesSpawned < gameState.regularZombiesTotal && zombies.length < _curLimit) {
                        setTimeout(() => spawnOneRegularZombie(), 500);
                    }
                    // Trigger boss once all regular zombies are cleared
@@ -2984,7 +3253,8 @@
                // Normal wave — spawn up to MAX_ZOMBIES_ON_GROUND at once, respawn on death
                gameState.regularZombiesTotal = count;
 
-               const initialSpawn = Math.min(count, MAX_ZOMBIES_ON_GROUND);
+               const _effectiveMax = window._modZombieLimit !== undefined ? window._modZombieLimit : MAX_ZOMBIES_ON_GROUND;
+               const initialSpawn = Math.min(count, _effectiveMax);
                for (let i = 0; i < initialSpawn; i++) {
                    setTimeout(() => {
                        spawnOneRegularZombie();
@@ -4142,6 +4412,16 @@
            }
 
            const playerPos = thirdPersonState.enabled ? thirdPersonState.worldPos.clone() : camera.position.clone();
+           // Enforce mod zombie limit
+           if (window._modZombieLimit !== undefined) {
+               const _lim = window._modZombieLimit;
+               while (zombies.length > _lim) {
+                   const _z = zombies[zombies.length - 1];
+                   scene.remove(_z.group);
+                   zombies.splice(zombies.length - 1, 1);
+               }
+           }
+
            zombies.forEach(zombie => zombie.update(playerPos, deltaTime));
 
            projectiles.forEach(proj => proj.update(deltaTime));
@@ -4192,6 +4472,190 @@
        updateUI();
        updateHealthBar();
        updateWeaponCycleButton();
+
+       // ==========================================
+       // MOD MENU
+       // ==========================================
+       const modState = {
+           godMode: false,
+           allPerksActive: false
+       };
+
+       let modMenuOpen = false;
+
+       function openModMenu() {
+           modMenuOpen = true;
+           shopOpen = true; // pause game loop
+           // Refresh live displays
+           document.getElementById('mod-zombie-limit-display').textContent = MAX_ZOMBIES_ON_GROUND;
+           document.getElementById('mod-zombie-limit-input').value = MAX_ZOMBIES_ON_GROUND;
+           document.getElementById('mod-health-display').textContent = Math.round(gameState.health);
+           document.getElementById('mod-maxhealth-display').textContent = CONFIG.MAX_HEALTH;
+           document.getElementById('mod-health-input').value = Math.round(gameState.health);
+           document.getElementById('mod-speed-input').value = CONFIG.PLAYER_SPEED;
+           // Sync toggles
+           syncToggle('mod-godmode-toggle', modState.godMode);
+           syncToggle('mod-allperks-toggle', modState.allPerksActive);
+           document.getElementById('mod-menu-overlay').classList.add('open');
+       }
+
+       function closeModMenu() {
+           modMenuOpen = false;
+           shopOpen = false;
+           lastTime = performance.now();
+           document.getElementById('mod-menu-overlay').classList.remove('open');
+       }
+
+       function syncToggle(id, state) {
+           const el = document.getElementById(id);
+           if (state) { el.classList.add('on'); } else { el.classList.remove('on'); }
+       }
+
+       function flashStatus(id) {
+           const el = document.getElementById(id);
+           if (!el) return;
+           el.classList.add('visible');
+           setTimeout(() => el.classList.remove('visible'), 1500);
+       }
+
+       // Zombie limit
+       document.getElementById('mod-zombie-limit-apply').addEventListener('click', () => {
+           const val = parseInt(document.getElementById('mod-zombie-limit-input').value);
+           if (isNaN(val) || val < 1) return;
+           // Override the MAX_ZOMBIES_ON_GROUND constant by patching via a global
+           window._modZombieLimit = val;
+           document.getElementById('mod-zombie-limit-display').textContent = val;
+           flashStatus('mod-zombielimit-status');
+       });
+
+       // Player health
+       document.getElementById('mod-health-apply').addEventListener('click', () => {
+           const val = parseInt(document.getElementById('mod-health-input').value);
+           if (isNaN(val) || val < 1) return;
+           // Also raise MAX_HEALTH if needed so the bar renders correctly
+           if (val > CONFIG.MAX_HEALTH) CONFIG.MAX_HEALTH = val;
+           gameState.health = val;
+           updateHealthBar();
+           updateUI();
+           document.getElementById('mod-health-display').textContent = val;
+           document.getElementById('mod-maxhealth-display').textContent = CONFIG.MAX_HEALTH;
+           flashStatus('mod-health-status');
+       });
+
+       // Max ammo
+       document.getElementById('mod-maxammo-apply').addEventListener('click', () => {
+           const val = parseInt(document.getElementById('mod-maxammo-input').value);
+           if (isNaN(val) || val < 0) return;
+           // Set totalAmmo for ALL weapons
+           gameState.weapons.forEach(w => { w.totalAmmo = val; });
+           updateUI();
+           flashStatus('mod-maxammo-status');
+       });
+
+       // Player speed
+       document.getElementById('mod-speed-apply').addEventListener('click', () => {
+           const val = parseFloat(document.getElementById('mod-speed-input').value);
+           if (isNaN(val) || val <= 0) return;
+           CONFIG.PLAYER_SPEED = val;
+           flashStatus('mod-speed-status');
+       });
+
+       // God mode toggle
+       document.getElementById('mod-godmode-toggle').addEventListener('click', () => {
+           modState.godMode = !modState.godMode;
+           syncToggle('mod-godmode-toggle', modState.godMode);
+           document.getElementById('mod-row-godmode').classList.toggle('active-mod', modState.godMode);
+           showNotification(modState.godMode ? '😇 GOD MODE ON' : '💀 GOD MODE OFF', '#ff00ff');
+       });
+
+       // All perks toggle
+       document.getElementById('mod-allperks-toggle').addEventListener('click', () => {
+           modState.allPerksActive = !modState.allPerksActive;
+           syncToggle('mod-allperks-toggle', modState.allPerksActive);
+           document.getElementById('mod-row-allperks').classList.toggle('active-mod', modState.allPerksActive);
+
+           if (modState.allPerksActive) {
+               // Activate every perk for a very long duration (24 hrs)
+               PERK_DEFS.forEach(def => {
+                   if (!perks[def.id].active) {
+                       const fakeInfiniteDef = Object.assign({}, def, { duration: 86400000 });
+                       activatePerk(def.id, fakeInfiniteDef);
+                   }
+               });
+               showNotification('⭐ ALL PERKS ACTIVATED!', '#ff00ff');
+           } else {
+               // Deactivate all perks immediately
+               PERK_DEFS.forEach(def => {
+                   const state = perks[def.id];
+                   if (state.active) {
+                       state.active = false;
+                       if (state._timeout) clearTimeout(state._timeout);
+                       if (state._interval) clearInterval(state._interval);
+                       if (state.badgeEl) { state.badgeEl.remove(); state.badgeEl = null; }
+                   }
+               });
+               if (window._portalHoop) window._portalHoop.visible = false;
+               showNotification('❌ ALL PERKS DEACTIVATED', '#ff6644');
+           }
+       });
+
+       // Open / close buttons
+       document.getElementById('mod-menu-button').addEventListener('click', openModMenu);
+       document.getElementById('mod-menu-button').addEventListener('touchstart', (e) => {
+           e.preventDefault(); e.stopPropagation(); openModMenu();
+       }, { passive: false });
+
+       document.getElementById('mod-close-btn').addEventListener('click', closeModMenu);
+       document.getElementById('mod-close-btn').addEventListener('touchstart', (e) => {
+           e.preventDefault(); closeModMenu();
+       }, { passive: false });
+
+       // ==========================================
+       // PATCH takeDamage for God Mode
+       // ==========================================
+       // We intercept damage in the gameState by wrapping the existing damage logic.
+       // Since damage is applied directly via: gameState.health -= damage
+       // we use a Proxy on gameState to intercept health changes.
+       (function patchGodMode() {
+           let _health = gameState.health;
+           Object.defineProperty(gameState, 'health', {
+               get() { return _health; },
+               set(val) {
+                   // Only block decreases when god mode is on and game is running
+                   if (modState.godMode && val < _health && gameState.gameStarted && !gameState.isGameOver) {
+                       return; // block the damage
+                   }
+                   _health = val;
+               },
+               configurable: true
+           });
+       })();
+
+       // ==========================================
+       // PATCH spawnOneRegularZombie for zombie cap
+       // ==========================================
+       // We override the MAX_ZOMBIES_ON_GROUND check by replacing the spawn function
+       const _origSpawnOne = spawnOneRegularZombie;
+       // The cap is enforced inside spawnZombies via Math.min(count, MAX_ZOMBIES_ON_GROUND)
+       // and in die() which calls spawnOneRegularZombie if regularZombiesSpawned < total.
+       // We patch by overriding the initial spawn count in spawnZombies — we redefine it:
+       const _origSpawnZombies = spawnZombies;
+       // Rather than redefine (scope issues), we patch via the global window._modZombieLimit
+       // which is checked below by monkey-patching the zombie die() respawn logic is already
+       // handled — the live cap check uses zombies.length which we enforce separately.
+       // The simplest approach: after each spawn, trim excess zombies if over limit.
+       function enforceZombieLimit() {
+           const limit = window._modZombieLimit || 20;
+           while (zombies.length > limit) {
+               const z = zombies[zombies.length - 1];
+               scene.remove(z.group);
+               zombies.splice(zombies.length - 1, 1);
+           }
+       }
+       // Hook into the game loop by patching spawnOneRegularZombie on the window
+       const _realSpawnOne = window.spawnOneRegularZombie || spawnOneRegularZombie;
+
+
 
        // ==========================================
        // DAY/NIGHT CYCLE
