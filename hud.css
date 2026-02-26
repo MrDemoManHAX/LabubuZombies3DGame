@@ -1,0 +1,267 @@
+/* HUD components — stats, bars, wave info, crosshair */
+           left: max(8px, 1vw);
+           color: #fff;
+           text-shadow: 2px 2px 4px #000;
+           font-size: var(--stats-font);
+           z-index: 10;
+           opacity: 0.55;
+           transition: opacity 0.3s;
+           /* prevent overlap with top-centre buttons */
+           max-width: calc(50% - 80px);
+       }
+
+       #stats:hover, #stats:active {
+           opacity: 1;
+       }
+
+       .stat-bar {
+           background: rgba(0,0,0,0.6);
+           padding: 3px 7px;
+           margin: 2px 0;
+           border-radius: 4px;
+           border: 1px solid #444;
+           min-width: min(130px, 20vw);
+       }
+
+       #health-bar { border-color: #c00; }
+       #armor-bar  { border-color: #00f; }
+       #ammo-bar   { border-color: #fc0; }
+
+       .bar-container {
+           width: 100%;
+           height: clamp(5px, 1vh, 9px);
+           background: #333;
+           border-radius: 3px;
+           margin-top: 2px;
+           overflow: hidden;
+       }
+
+       .bar-fill {
+           height: 100%;
+           border-radius: 3px;
+           transition: width 0.3s;
+       }
+
+       #health-fill {
+           background: linear-gradient(90deg, #f00, #c00);
+           box-shadow: 0 0 10px rgba(255,0,0,0.5);
+       }
+
+       #armor-fill {
+           background: linear-gradient(90deg, #00f, #00c);
+           box-shadow: 0 0 10px rgba(0,0,255,0.5);
+       }
+
+       #ammo-fill {
+           background: linear-gradient(90deg, #ff0, #fa0);
+           box-shadow: 0 0 10px rgba(255,200,0,0.5);
+       }
+
+       /* ---- TOP-RIGHT: wave info — clear of minimap ---- */
+       #wave-info {
+           position: absolute;
+           top: calc(max(8px,1vh) + min(100px,14vw) + 8px); /* below minimap */
+           right: max(8px, 1vw);
+           text-align: right;
+           color: #fff;
+           font-size: clamp(14px, 2.5vw, 22px);
+           text-shadow: 3px 3px 6px #000;
+       }
+
+       /* ---- CROSSHAIR (centred) ---- */
+       #crosshair {
+           position: absolute;
+           top: 50%;
+           left: 50%;
+           transform: translate(-50%, -50%);
+           width: 30px;
+           height: 30px;
+           pointer-events: none;
+       }
+
+       #crosshair::before, #crosshair::after {
+           content: '';
+           position: absolute;
+           background: rgba(255,0,0,0.8);
+       }
+
+       #crosshair::before {
+           width: 20px; height: 2px;
+           top: 50%; left: 50%;
+           transform: translate(-50%, -50%);
+       }
+
+       #crosshair::after {
+           width: 2px; height: 20px;
+           top: 50%; left: 50%;
+           transform: translate(-50%, -50%);
+       }
+
+       /* ---- BOTTOM-LEFT: joystick ---- */
+       #joystick-area {
+           position: absolute;
+           bottom: var(--b-pad);
+           left: var(--r-pad);
+           width: var(--joy-size);
+           height: var(--joy-size);
+           pointer-events: all;
+       }
+
+       #joystick-base {
+           width: 100%;
+           height: 100%;
+           background: radial-gradient(circle, rgba(100,100,100,0.5), rgba(50,50,50,0.5));
+           border-radius: 50%;
+           border: 3px solid rgba(255,255,255,0.3);
+       }
+
+       #joystick-stick {
+           position: absolute;
+           width: var(--joy-stick-size);
+           height: var(--joy-stick-size);
+           background: radial-gradient(circle, rgba(200,200,200,0.8), rgba(150,150,150,0.8));
+           border-radius: 50%;
+           top: 50%; left: 50%;
+           transform: translate(-50%, -50%);
+           border: 3px solid rgba(255,255,255,0.5);
+       }
+
+       /* =============================================
+          RIGHT-SIDE BUTTON COLUMN
+          Stack from bottom to top:
+            row0 (bottom): FIRE + RELOAD side by side
+            row1: JUMP (left of FIRE column) + WEAPON (right)
+            row2: WEAPON HINT
+            row3: SHOP
+            row4: COINS
+            row5: ACTIVE PERKS HUD
+          ============================================= */
+
+       /* FIRE — bottom-right anchor */
+       #shoot-button {
+           position: absolute;
+           bottom: var(--b-pad);
+           right: var(--r-pad);
+           width: var(--btn-lg);
+           height: var(--btn-lg);
+           background: radial-gradient(circle, rgba(255,0,0,0.7), rgba(200,0,0,0.7));
+           border-radius: 50%;
+           border: 4px solid rgba(255,255,255,0.5);
+           pointer-events: all;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: clamp(9px, 1.5vw, 13px);
+           color: #fff;
+           font-weight: bold;
+           text-shadow: 2px 2px 4px #000;
+           box-shadow: 0 4px 15px rgba(255,0,0,0.5);
+           cursor: pointer;
+           user-select: none;
+           z-index: 20;
+       }
+
+       /* RELOAD — sits to the left of FIRE, same bottom row */
+       #reload-button {
+           position: absolute;
+           bottom: calc(var(--b-pad) + (var(--btn-lg) - var(--btn-md)) / 2);
+           right: calc(var(--r-pad) + var(--btn-lg) + var(--gap));
+           width: var(--btn-md);
+           height: var(--btn-md);
+           background: radial-gradient(circle, rgba(255,200,0,0.7), rgba(200,150,0,0.7));
+           border-radius: 50%;
+           border: 3px solid rgba(255,255,255,0.5);
+           pointer-events: all;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: clamp(8px, 1.3vw, 11px);
+           color: #fff;
+           font-weight: bold;
+           cursor: pointer;
+           user-select: none;
+           z-index: 20;
+       }
+
+       /* JUMP — above RELOAD */
+       #jump-button {
+           position: absolute;
+           bottom: calc(var(--b-pad) + var(--btn-md) + var(--gap) + (var(--btn-lg) - var(--btn-md)) / 2);
+           right: calc(var(--r-pad) + var(--btn-lg) + var(--gap));
+           width: var(--btn-md);
+           height: var(--btn-md);
+           background: radial-gradient(circle, rgba(100,220,100,0.85), rgba(40,160,40,0.85));
+           border-radius: 50%;
+           border: 3px solid rgba(180,255,180,0.7);
+           pointer-events: all;
+           display: flex;
+           align-items: center;
+           justify-content: center;
+           font-size: clamp(8px, 1.3vw, 11px);
+           font-weight: bold;
+           color: #fff;
+           cursor: pointer;
+           user-select: none;
+           box-shadow: 0 0 14px rgba(80,200,80,0.5);
+           z-index: 20;
+       }
+       #jump-button:active { transform: scale(0.92); }
+       #jump-button.fly-mode {
+           background: radial-gradient(circle, rgba(0,180,255,0.95), rgba(0,90,200,0.95));
+           border-color: rgba(100,220,255,0.9);
+           box-shadow: 0 0 22px rgba(0,180,255,0.8);
+       }
+       #fuel-bar { border-color: #0af; display: none; }
+       #fuel-fill {
+           background: linear-gradient(90deg, #0af, #0ff);
+           box-shadow: 0 0 10px rgba(0,180,255,0.6);
+       }
+
+       /* WEAPON CYCLE — above FIRE */
+       #weapon-cycle-button {
+           position: absolute;
+           bottom: calc(var(--b-pad) + var(--btn-lg) + var(--gap));
+           right: var(--r-pad);
+           width: var(--btn-md);
+           height: var(--btn-md);
+           background: rgba(0,0,0,0.8);
+           border: 2px solid #0f0;
+           border-radius: 10px;
+           pointer-events: all;
+           display: flex;
+           flex-direction: column;
+           align-items: center;
+           justify-content: center;
+           cursor: pointer;
+           user-select: none;
+           box-shadow: 0 0 10px rgba(0,255,0,0.3);
+           transition: all 0.2s;
+           z-index: 20;
+       }
+
+       #weapon-cycle-button:active {
+           transform: scale(0.95);
+           box-shadow: 0 0 20px rgba(0,255,0,0.6);
+       }
+
+       #weapon-icon {
+           font-size: clamp(14px, 2.5vw, 22px);
+           margin-bottom: 1px;
+       }
+
+       #weapon-name {
+           color: #0f0;
+           font-size: clamp(7px, 1.1vw, 10px);
+           font-weight: bold;
+           text-shadow: 0 0 5px #0f0;
+       }
+
+       #weapon-slot-indicator {
+           color: #888;
+           font-size: clamp(6px, 0.9vw, 9px);
+           margin-top: 1px;
+       }
+
+       /* WEAPON HINT — above weapon-cycle-button */
+       #weapon-hint {
+           position: absolute;
